@@ -10,10 +10,9 @@ async fn main() -> Result<()> {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .arg(
-            clap::Arg::new("config_path")
+            clap::Arg::new("config")
                 .long("config")
                 .short('c')
-                //                .takes_value(true)
                 .help("Provide a specific config file"),
         )
         .subcommand(
@@ -27,10 +26,10 @@ async fn main() -> Result<()> {
 
     match args.subcommand().expect("subcommand is required") {
         ("scheduler", _args) => {
-            println!("Placeholder");
+            println!("placeholder");
         }
         _ => unreachable!("clap should have already checked the subcommands"),
     }
 
-    Ok(())
+    Ok(()) // Placeholder
 }

@@ -3,10 +3,12 @@ name = "datadact"
 version = "0.1.0"
 authors = ["Shingo OKAWA <shingo.okawa.g.h.c@gmail.com>"]
 edition = "2021"
+rust-version = "1.67"
 
 [dependencies]
 anyhow = "1.0.34"
 clap = "4.0.0"
+config = { version = "0.13.3", default-features = false, features = ["json", "toml", "yaml"] }
 dotenv = "0.15.0"
 git-version = "0.3.5"
 tokio = { version = "1.25.0", features = [ "full", "rt-multi-thread" ] }
