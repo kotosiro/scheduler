@@ -96,6 +96,7 @@ dependencies = [
  "config",
  "dotenv",
  "git-version",
+ "serde",
  "tokio",
 ]
 
