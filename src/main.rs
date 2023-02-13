@@ -4,9 +4,9 @@ use anyhow::Result;
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
 
-    let app = clap::Command::new("datadact")
+    let app = clap::Command::new("kotosiro")
         .author("Shingo OKAWA <shingo.okawa.g.h.c@gmail.com>")
-        .version(datadact::VERSION)
+        .version(kotosiro::VERSION)
         .subcommand_required(true)
         .arg_required_else_help(true)
         .arg(
