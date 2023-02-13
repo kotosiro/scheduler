@@ -27,9 +27,8 @@ async fn main() -> Result<()> {
     match args.subcommand().expect("subcommand is required") {
         ("scheduler", _args) => {
             println!("placeholder");
+            Ok(())
         }
         _ => unreachable!("clap should have already checked the subcommands"),
     }
-
-    Ok(()) // Placeholder
 }
