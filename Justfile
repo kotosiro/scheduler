@@ -10,4 +10,4 @@ build:
 
 # Build Kotosiro into a docker image for local use
 package:
-    DOCKER_BUILDKIT=1 docker build . -t kotosiro:local -f devops/Dockerfiles/Dockerfile
+    DOCKER_BUILDKIT=1 docker build . -t kotosiro:local -f devops/docker/Dockerfile
