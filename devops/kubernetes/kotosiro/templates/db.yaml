@@ -12,6 +12,7 @@ spec:
   selector: {{- include "kotosiro.db.selectorLabels" . | nindent 4 }}
 
 
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

@@ -62,6 +62,25 @@ Create the name of the service account to use
 {{- end }}
 
 
+
+
+{{/*
+Scheduler.
+*/}}
+{{- define "kotosiro.schedulre.name" -}}
+{{ include "kotosiro.name" . }}-scheduler
+{{- end }}
+
+{{- define "kotosiro.scheduler.fullname" -}}
+{{ include "kotosiro.fullname" . }}-scheduler
+{{- end -}}
+
+{{- define "kotosiro.scheduler.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "kotosiro.name" . }}-scheduler
+app.kubernetes.io/instance: {{ .Release.Name }}-scheduler
+{{- end }}
+
+
 {{/*
 Database.
 */}}
@@ -78,7 +97,7 @@ app.kubernetes.io/name: {{ include "kotosiro.name" . }}-db
 app.kubernetes.io/instance: {{ .Release.Name }}-db
 {{- end }}
 
-{{- define "kotosiro.db.passwordSecretName" -}}
+{{- define "kotosiro.db.secretName" -}}
     {{- if .Values.global.db.existingSecret -}}
         {{- printf "%s" .Values.global.db.existingSecret -}}
     {{- else -}}
