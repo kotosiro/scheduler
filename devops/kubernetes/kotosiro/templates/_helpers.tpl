@@ -60,3 +60,28 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Database.
+*/}}
+{{- define "kotosiro.db.name" -}}
+{{ include "kotosiro.name" . }}-db
+{{- end }}
+
+{{- define "kotosiro.db.fullname" -}}
+{{ include "kotosiro.fullname" . }}-db
+{{- end -}}
+
+{{- define "kotosiro.db.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "kotosiro.name" . }}-db
+app.kubernetes.io/instance: {{ .Release.Name }}-db
+{{- end }}
+
+{{- define "kotosiro.db.passwordSecretName" -}}
+    {{- if .Values.global.db.existingSecret -}}
+        {{- printf "%s" .Values.global.db.existingSecret -}}
+    {{- else -}}
+        {{- printf "%s" (include "kotosiro.db.fullname" .) -}}
+    {{- end -}}
+{{- end -}}
