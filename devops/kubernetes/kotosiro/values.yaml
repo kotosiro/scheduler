@@ -14,7 +14,6 @@ image:
 
 scheduler:
   replicaCount: 1
-  gossipPort: 7111
 
 #
 # Default values for kotosiro database.
