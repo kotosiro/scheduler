@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "kotosiro.db.fullname" . }}-proxy
-  labels: {{ include "kotosiro.labels" . | nindent 4 }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
 spec:
   ports:
     - name: {{ include "kotosiro.db.fullname" . }}-proxy-port
@@ -17,7 +17,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "kotosiro.db.fullname" . }}
-  labels: {{ include "kotosiro.labels" . | nindent 4 }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.db.replicaCount }}
   selector:
@@ -33,19 +33,12 @@ spec:
           ports:
             - containerPort: {{ .Values.db.internalPort }}
           env:
-            - name: PASSWORD_FILE
-              value: /etc/postgres/secret/password
+            - name: PASSWORD
+              value: {{ .Values.db.password | b64enc }}
           resources: {}
           volumeMounts:
             - name: {{ include "kotosiro.db.fullname" . }}-data
               mountPath: /var/lib/postgres/data
-            - name: {{ include "kotosiro.db.fullname" . }}-secret
-              mountPath: /etc/postgres/secret
-      volumes:
-       - name: {{ include "kotosiro.db.fullname" . }}-secret
-         secret:
-           secretName: {{ include "kotosiro.db.fullname" . }}-secret
-
       restartPolicy: Always
   volumeClaimTemplates:
     - metadata:
@@ -56,16 +49,3 @@ spec:
         resources:
           requests:
             storage: {{ .Values.db.storageSize }}
-
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ include "kotosiro.db.fullname" . }}-secret
-  labels: {{ include "kotosiro.labels" . | nindent 4 }}
-type: Opaque
-data:
-  {{- if .Values.db.password }}
-  password: {{ .Values.db.password | b64enc | quote }}
-  {{- end }}

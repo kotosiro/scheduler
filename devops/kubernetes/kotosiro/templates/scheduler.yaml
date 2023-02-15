@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kotosiro.scheduler.fullname" . }}-cluster
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - name: {{ include "kotosiro.scheduler.fullname" . }}-gossip-port
+      port: 7111
+  selector: {{- include "kotosiro.scheduler.selectorLabels" . | nindent 4 }}
+
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "kotosiro.scheduler.fullname" . }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.scheduler.replicaCount }}
+  selector:
+    matchLabels: {{- include "kotosiro.scheduler.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "kotosiro.scheduler.fullname" . }}-cluster
+  #minReadySeconds: 10
+  template:
+    metadata:
+      labels: {{- include "kotosiro.scheduler.selectorLabels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: kotosiro
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args:
+            - scheduler
+          env:
+            - name: DB_URL
+              value: postgres://postgres:{{ .Values.db.password }}@{{ include "kotosiro.db.fullname" . }}-proxy/
+            - name: SERVER_BIND
+              value: 0.0.0.0:8080
+            - name: CLUSTER_GOSSIP_BIND
+              value: 0.0.0.0:7111
+            - name: CLUSTER_GOSSIP_ADDR
+              value: 0.0.0.0:7111
+        - name: telegraf
+          image: telegraf:latest
+          env:
+            - name: INFLUX_TOKEN
+              value: {{ .Values.metrics.influxToken | b64enc }}
+          ports:
+            - containerPort: 8125
+              name: statsd-port
+              protocol: UDP
+          volumeMounts:
+            - name: telegraf-conf
+              mountPath: /etc/telegraf
+              readOnly: true
+      volumes:
+        - name: telegraf-conf
+          configMap:
+            name: telegraf-conf

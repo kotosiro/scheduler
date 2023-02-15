@@ -1,12 +1,20 @@
 #
 # Default values for kotosiro.
 #
+
 image:
   registry: ""
   repository: kotosiro
   tag: local
   pullPolicy: IfNotPresent
   pullSecrets: []
+
+#
+# Default values for kotosiro metrics.
+#
+
+metrics:
+  influxToken: INFLUX_TOKEN
 
 #
 # Default values for kotosiro scheduler.
