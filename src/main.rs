@@ -16,10 +16,14 @@ async fn main() -> Result<()> {
                 .help("Provide a specific config file"),
         )
         .subcommand(
-            clap::Command::new("scheduler")
-                .alias("server")
+            clap::Command::new("controller")
                 .about("Launch the scheduler process")
                 .after_help("The scheduler has an API server embedded."),
+        )
+        .subcommand(
+            clap::Command::new("api")
+                .about("Launch the API server process")
+                .after_help("The API server may be launched many times for load balancing and HA."),
         );
 
     let args = app.get_matches();

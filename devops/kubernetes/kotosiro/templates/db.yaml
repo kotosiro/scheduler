@@ -33,7 +33,7 @@ spec:
           ports:
             - containerPort: {{ .Values.db.internalPort }}
           env:
-            - name: PASSWORD
+            - name: KOTOSIRO_DB_PASSWORD
               value: {{ .Values.db.password | b64enc }}
           resources: {}
           volumeMounts:

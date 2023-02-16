@@ -62,22 +62,20 @@ Create the name of the service account to use
 {{- end }}
 
 
-
-
 {{/*
-Scheduler.
+Controller.
 */}}
-{{- define "kotosiro.schedulre.name" -}}
-{{ include "kotosiro.name" . }}-scheduler
+{{- define "kotosiro.controller.name" -}}
+{{ include "kotosiro.name" . }}-controller
 {{- end }}
 
-{{- define "kotosiro.scheduler.fullname" -}}
-{{ include "kotosiro.fullname" . }}-scheduler
+{{- define "kotosiro.controller.fullname" -}}
+{{ include "kotosiro.fullname" . }}-controller
 {{- end -}}
 
-{{- define "kotosiro.scheduler.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "kotosiro.name" . }}-scheduler
-app.kubernetes.io/instance: {{ .Release.Name }}-scheduler
+{{- define "kotosiro.controller.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "kotosiro.name" . }}-controller
+app.kubernetes.io/instance: {{ .Release.Name }}-controller
 {{- end }}
 
 

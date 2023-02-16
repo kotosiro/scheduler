@@ -2,46 +2,48 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "kotosiro.scheduler.fullname" . }}-cluster
+  name: {{ include "kotosiro.controller.fullname" . }}-cluster
   labels: {{- include "kotosiro.labels" . | nindent 4 }}
 spec:
   clusterIP: None
   ports:
-    - name: {{ include "kotosiro.scheduler.fullname" . }}-gossip-port
+    - name: {{ include "kotosiro.controller.fullname" . }}-gossip-port
       port: 7111
-  selector: {{- include "kotosiro.scheduler.selectorLabels" . | nindent 4 }}
+  selector: {{- include "kotosiro.controller.selectorLabels" . | nindent 4 }}
 
 
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "kotosiro.scheduler.fullname" . }}
+  name: {{ include "kotosiro.controller.fullname" . }}
   labels: {{- include "kotosiro.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.scheduler.replicaCount }}
+  replicas: {{ .Values.controller.replicaCount }}
   selector:
-    matchLabels: {{- include "kotosiro.scheduler.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "kotosiro.scheduler.fullname" . }}-cluster
+    matchLabels: {{- include "kotosiro.controller.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "kotosiro.controller.fullname" . }}-cluster
   #minReadySeconds: 10
   template:
     metadata:
-      labels: {{- include "kotosiro.scheduler.selectorLabels" . | nindent 8 }}
+      labels: {{- include "kotosiro.controller.selectorLabels" . | nindent 8 }}
     spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: kotosiro
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           args:
-            - scheduler
+            - controller
           env:
-            - name: DB_URL
+            - name: KOTOSIRO_DB_URL
               value: postgres://postgres:{{ .Values.db.password }}@{{ include "kotosiro.db.fullname" . }}-proxy/
-            - name: SERVER_BIND
+            - name: KOTOSIRO_CONTROLLER_BIND
               value: 0.0.0.0:8080
-            - name: CLUSTER_GOSSIP_BIND
+            - name: KOTOSIRO_CONTROLLER_ADDR
+              value: 0.0.0.0:8080
+            - name: KOTOSIRO_CLUSTER_GOSSIP_BIND
               value: 0.0.0.0:7111
-            - name: CLUSTER_GOSSIP_ADDR
+            - name: KOTOSIRO_CLUSTER_GOSSIP_ADDR
               value: 0.0.0.0:7111
         - name: telegraf
           image: telegraf:latest
