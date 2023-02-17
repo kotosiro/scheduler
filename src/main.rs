@@ -1,4 +1,7 @@
 use anyhow::Result;
+use kotosiro::config;
+use kotosiro::logging;
+use tracing::debug;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -27,10 +30,18 @@ async fn main() -> Result<()> {
         );
 
     let args = app.get_matches();
+    let conf = args.get_one::<String>("config").map(AsRef::as_ref);
+    let conf = config::load(conf)?;
+    logging::setup(&conf)?;
+    debug!("configuration: {:?}", &conf);
 
     match args.subcommand().expect("subcommand is required") {
-        ("scheduler", _args) => {
-            println!("placeholder");
+        ("controller", _args) => {
+            println!("controller");
+            Ok(())
+        }
+        ("api", _args) => {
+            println!("api");
             Ok(())
         }
         _ => unreachable!("clap should have already checked the subcommands"),

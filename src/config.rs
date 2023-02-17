@@ -1,15 +1,24 @@
-use config::{builder::DefaultState, ConfigBuilder, Environment, File, FileFormat};
+use anyhow::Context;
+use anyhow::Result;
+use config::builder::DefaultState;
+use config::ConfigBuilder;
+use config::Environment;
+use config::File;
+use config::FileFormat;
+use std::path::Path;
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(serde::Deserialize, Clone, Debug)]
 pub struct Config {
     pub db_url: String,
     pub controller_addr: String,
     pub controller_bind: String,
     pub cluster_gossip_bind: String,
     pub cluster_gossip_addr: String,
+    pub use_json_log: bool,
+    pub log_filter: String,
 }
 
-fn loader(file: Option<&Path>) -> ConfigBuilder<DefaultState> {
+fn builder(file: Option<&Path>) -> ConfigBuilder<DefaultState> {
     let mut builder = config::Config::builder();
 
     builder = builder.add_source(File::from_str(
@@ -29,7 +38,7 @@ fn loader(file: Option<&Path>) -> ConfigBuilder<DefaultState> {
 }
 
 pub fn load(file: Option<&Path>) -> Result<Config> {
-    let config = loader(file)
+    let config = builder(file)
         .build()?
         .try_deserialize()
         .context("mandatory configuration value not set")?;
