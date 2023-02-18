@@ -1,7 +1,7 @@
 use anyhow::Result;
 use kotosiro::config;
 use kotosiro::logging;
-use tracing::info;
+use tracing::debug;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,8 +20,8 @@ async fn main() -> Result<()> {
         )
         .subcommand(
             clap::Command::new("controller")
-                .about("Launch the scheduler process")
-                .after_help("The scheduler has an API server embedded."),
+                .about("Launch the controller process")
+                .after_help("The controller has an API server embedded."),
         )
         .subcommand(
             clap::Command::new("api")
@@ -33,15 +33,15 @@ async fn main() -> Result<()> {
     let conf = args.get_one::<String>("config").map(AsRef::as_ref);
     let conf = config::load(conf)?;
     logging::setup(&conf)?;
-    info!("{:#?}", &conf);
+    debug!("{conf:#?}");
 
     match args.subcommand().expect("subcommand is required") {
         ("controller", _args) => {
-            println!("controller");
+            debug!("controller is called");
             Ok(())
         }
         ("api", _args) => {
-            println!("api");
+            debug!("api is called");
             Ok(())
         }
         _ => unreachable!("clap should have already checked the subcommands"),
