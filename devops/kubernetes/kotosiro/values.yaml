@@ -21,9 +21,19 @@ controller:
 db:
   replicaCount: 1
   storageSize: 1G
-  internalPort: 5432
-  externalPort: 5432
+  proxyPort: 5432
   password: PASSWORD
+
+
+# Default values for kotosiro message queueing.
+mq:
+  replicaCount: 1
+  storageSize: 1G
+  listenerPort: 5672
+  managerPort: 15672
+  managerHost: rabbitmq.kotosiro.kube
+
+
 
 # Default values for kotosiro service.
 service:

@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "kotosiro.db.fullname" . }}-proxy
+  name: {{ include "kotosiro.db.fullname" . }}
   labels: {{- include "kotosiro.labels" . | nindent 4 }}
 spec:
   ports:
-    - name: {{ include "kotosiro.db.fullname" . }}-proxy-port
-      port: {{ .Values.db.internalPort }}
-      targetPort: {{ .Values.db.externalPort }}
+    - name: postgres
+      port: {{ .Values.db.proxyPort }}
+      targetPort: 5432
   selector: {{- include "kotosiro.db.selectorLabels" . | nindent 4 }}
 
 
@@ -22,7 +22,7 @@ spec:
   replicas: {{ .Values.db.replicaCount }}
   selector:
     matchLabels: {{- include "kotosiro.db.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "kotosiro.db.fullname" . }}-proxy
+  serviceName: {{ include "kotosiro.db.fullname" . }}
   template:
     metadata:
       labels: {{- include "kotosiro.db.selectorLabels" . | nindent 8 }}
@@ -31,18 +31,18 @@ spec:
         - name: postgres
           image: postgres:alpine
           ports:
-            - containerPort: {{ .Values.db.internalPort }}
+            - containerPort: 5432
           env:
             - name: KOTOSIRO_DB_PASSWORD
               value: {{ .Values.db.password | b64enc }}
           resources: {}
           volumeMounts:
-            - name: {{ include "kotosiro.db.fullname" . }}-data
+            - name: {{ include "kotosiro.db.fullname" . }}
               mountPath: /var/lib/postgres/data
       restartPolicy: Always
   volumeClaimTemplates:
     - metadata:
-        name: {{ include "kotosiro.db.fullname" . }}-data
+        name: {{ include "kotosiro.db.fullname" . }}
       spec:
         accessModes:
           - ReadWriteOnce

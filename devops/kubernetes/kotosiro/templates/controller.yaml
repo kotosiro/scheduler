@@ -2,12 +2,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "kotosiro.controller.fullname" . }}-cluster
+  name: {{ include "kotosiro.controller.fullname" . }}
   labels: {{- include "kotosiro.labels" . | nindent 4 }}
 spec:
   clusterIP: None
   ports:
-    - name: {{ include "kotosiro.controller.fullname" . }}-gossip-port
+    - name: gossip
       port: 7111
   selector: {{- include "kotosiro.controller.selectorLabels" . | nindent 4 }}
 
@@ -22,7 +22,7 @@ spec:
   replicas: {{ .Values.controller.replicaCount }}
   selector:
     matchLabels: {{- include "kotosiro.controller.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "kotosiro.controller.fullname" . }}-cluster
+  serviceName: {{ include "kotosiro.controller.fullname" . }}
   #minReadySeconds: 10
   template:
     metadata:
@@ -36,7 +36,7 @@ spec:
             - controller
           env:
             - name: KOTOSIRO_DB_URL
-              value: postgres://postgres:{{ .Values.db.password }}@{{ include "kotosiro.db.fullname" . }}-proxy/
+              value: postgres://postgres:{{ .Values.db.password }}@{{ include "kotosiro.db.fullname" . }}/
             - name: KOTOSIRO_CONTROLLER_BIND
               value: 0.0.0.0:8080
             - name: KOTOSIRO_CONTROLLER_ADDR
@@ -51,14 +51,14 @@ spec:
             - name: INFLUX_TOKEN
               value: {{ .Values.metrics.influxToken | b64enc }}
           ports:
-            - containerPort: 8125
-              name: statsd-port
+            - name: statsd
+              containerPort: 8125
               protocol: UDP
           volumeMounts:
-            - name: telegraf-conf
+            - name: telegraf
               mountPath: /etc/telegraf
               readOnly: true
       volumes:
-        - name: telegraf-conf
+        - name: telegraf
           configMap:
-            name: telegraf-conf
+            name: telegraf

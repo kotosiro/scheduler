@@ -102,3 +102,20 @@ app.kubernetes.io/instance: {{ .Release.Name }}-db
         {{- printf "%s" (include "kotosiro.db.fullname" .) -}}
     {{- end -}}
 {{- end -}}
+
+
+{{/*
+Message Queueing.
+*/}}
+{{- define "kotosiro.mq.name" -}}
+{{ include "kotosiro.name" . }}-mq
+{{- end }}
+
+{{- define "kotosiro.mq.fullname" -}}
+{{ include "kotosiro.fullname" . }}-mq
+{{- end -}}
+
+{{- define "kotosiro.mq.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "kotosiro.name" . }}-mq
+app.kubernetes.io/instance: {{ .Release.Name }}-mq
+{{- end }}

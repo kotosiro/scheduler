@@ -1,0 +1,71 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kotosiro.mq.fullname" . }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: rabbitmq
+      port: {{ .Values.mq.listenerPort }}
+      targetPort: 5672
+    - name: rabbitmq-manager
+      port: {{ .Values.mq.managerPort }}
+      targetPort: 15672
+  selector: {{- include "kotosiro.mq.selectorLabels" . | nindent 4 }}
+
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "kotosiro.mq.fullname" . }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.mq.replicaCount }}
+  selector:
+    matchLabels: {{- include "kotosiro.mq.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "kotosiro.mq.fullname" . }}
+  template:
+    metadata:
+      labels: {{- include "kotosiro.mq.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:management-alpine
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          volumeMounts:
+            - name: {{ include "kotosiro.mq.fullname" . }}
+              mountPath: /var/lib/rabbitmq
+      restartPolicy: Always
+  volumeClaimTemplates:
+      - metadata:
+          name: {{ include "kotosiro.mq.fullname" . }}
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ .Values.db.storageSize }}
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "kotosiro.mq.fullname" . }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+spec:
+  rules:
+    - host: {{ .Values.mq.managerHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "kotosiro.mq.fullname" . }}
+                port:
+                  number: {{ .Values.mq.managerPort }}
