@@ -32,7 +32,7 @@ fn builder(file: Option<&Path>) -> ConfigBuilder<DefaultState> {
 
     builder.add_source(
         Environment::with_prefix("KOTOSIRO")
-            .list_separator(",")
+            //.list_separator(",")
             .try_parsing(true),
     )
 }

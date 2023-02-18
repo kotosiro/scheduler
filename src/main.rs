@@ -1,7 +1,7 @@
 use anyhow::Result;
 use kotosiro::config;
 use kotosiro::logging;
-use tracing::debug;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
     let conf = args.get_one::<String>("config").map(AsRef::as_ref);
     let conf = config::load(conf)?;
     logging::setup(&conf)?;
-    debug!("configuration: {:?}", &conf);
+    info!("{:#?}", &conf);
 
     match args.subcommand().expect("subcommand is required") {
         ("controller", _args) => {
