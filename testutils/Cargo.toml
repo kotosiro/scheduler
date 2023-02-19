@@ -1,0 +1,10 @@
+[package]
+name = "testutils"
+version = "1.0.0"
+authors = ["Shingo OKAWA <shingo.okawa.g.h.c@gmail.com>"]
+edition = "2021"
+rust-version = "1.67"
+
+[dependencies]
+rand = "0.8.5"
+regex = "1.4.2"

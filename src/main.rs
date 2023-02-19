@@ -23,25 +23,28 @@ async fn main() -> Result<()> {
                 .about("Launch the controller process")
                 .after_help("The controller has an API server embedded."),
         )
-        .subcommand(
-            clap::Command::new("api")
-                .about("Launch the API server process")
-                .after_help("The API server may be launched many times for load balancing and HA."),
-        );
+        .subcommand(clap::Command::new("runner").about("Launch the runner process"));
 
     let args = app.get_matches();
     let conf = args.get_one::<String>("config").map(AsRef::as_ref);
     let conf = config::load(conf)?;
     logging::setup(&conf)?;
-    debug!("{conf:#?}");
+    debug!(
+        db_url = &conf.db_url,
+        controller_addr = &conf.controller_addr,
+        controller_bind = &conf.controller_bind,
+        cluster_gossip_addr = &conf.cluster_gossip_addr,
+        cluster_gossip_bind = &conf.cluster_gossip_bind,
+        mq_addr = &conf.mq_addr,
+    );
 
     match args.subcommand().expect("subcommand is required") {
         ("controller", _args) => {
             debug!("controller is called");
             Ok(())
         }
-        ("api", _args) => {
-            debug!("api is called");
+        ("runner", _args) => {
+            debug!("runner is called");
             Ok(())
         }
         _ => unreachable!("clap should have already checked the subcommands"),

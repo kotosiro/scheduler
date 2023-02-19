@@ -37,6 +37,8 @@ spec:
           env:
             - name: KOTOSIRO_DB_URL
               value: postgres://postgres:{{ .Values.db.password }}@{{ include "kotosiro.db.fullname" . }}/
+            - name: KOTOSIRO_MQ_ADDR
+              value: amqp://{{ include "kotosiro.mq.fullname" . }}//
             - name: KOTOSIRO_CONTROLLER_BIND
               value: 0.0.0.0:8080
             - name: KOTOSIRO_CONTROLLER_ADDR
