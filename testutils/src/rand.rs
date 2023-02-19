@@ -1,9 +1,11 @@
+use rand::rngs::ThreadRng;
 use rand::Rng;
 
 static CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 pub fn i32(lower: i32, upper: i32) -> i32 {
-    rand::thread_rng().gen_range(lower..upper)
+    let mut rng = rand::thread_rng();
+    rng.gen_range(lower..upper)
 }
 
 pub fn bool() -> bool {
@@ -23,7 +25,8 @@ pub fn string(length: usize) -> String {
 }
 
 pub fn port() -> i32 {
-    rand::thread_rng().gen_range(0..65536)
+    let mut rng = rand::thread_rng();
+    rng.gen_range(0..65536)
 }
 
 pub fn ip() -> String {
@@ -38,5 +41,5 @@ pub fn ip() -> String {
 }
 
 pub fn url() -> String {
-    format!("{}://{}.org:{}", string(5), string(10), port())
+    format!("{}://{}:{}", string(5), string(10), port())
 }

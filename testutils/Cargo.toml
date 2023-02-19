@@ -8,3 +8,4 @@ rust-version = "1.67"
 [dependencies]
 rand = "0.8.5"
 regex = "1.4.2"
+tempfile = "3.3.0"
