@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -17,4 +16,11 @@ pub fn tempfile(content: &str) -> Result<NamedTempFile> {
     let mut file = NamedTempFile::new()?;
     writeln!(file, "{}", content)?;
     Ok(file)
+}
+
+pub fn persist<'a>(content: &'a str, path: &'a Path) -> Result<&'a Path> {
+    let file = NamedTempFile::new()?;
+    let mut persisted = file.persist(&path)?;
+    writeln!(persisted, "{}", content)?;
+    Ok(&path)
 }

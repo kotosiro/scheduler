@@ -49,16 +49,14 @@ pub fn load(file: Option<&Path>) -> Result<Config> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
+    use serial_test::serial;
     use std::env;
     use std::fs::remove_file;
-    use std::fs::File;
-    use std::io::BufRead;
-    use std::io::BufReader;
     use std::path::Path;
     use testutils;
 
     #[test]
+    #[serial]
     fn test_load_some() {
         let db_url: String = testutils::rand::url();
         let controller_addr: String = testutils::rand::ip();
@@ -80,21 +78,17 @@ use_json_log = {use_json_log}
 log_filter = "{log_filter}""#
         );
 
-        println!("{}", data);
-        let file = match testutils::io::tempfile(&data) {
+        let path = match testutils::io::persist(&data, Path::new("./config.toml")) {
             Ok(file) => file,
             Err(e) => panic!("could not create test configuration file: {e}"),
         };
 
-        let path = Path::new("./config_test.toml");
-        let file = match file.persist(&path) {
-            Ok(file) => file,
-            Err(e) => panic!("could not persist test configuration file: {e}"),
-        };
-
         let conf = match load(Some(&path)) {
             Ok(conf) => conf,
-            Err(e) => panic!("config object must be loaded: {e}"),
+            Err(e) => {
+                remove_file(&path).unwrap();
+                panic!("config object must be loaded: {e}")
+            }
         };
 
         assert_eq!(db_url, conf.db_url);
@@ -106,10 +100,14 @@ log_filter = "{log_filter}""#
         assert_eq!(use_json_log, conf.use_json_log);
         assert_eq!(log_filter, conf.log_filter);
 
-        remove_file(&path);
+        match remove_file(&path) {
+            Ok(_) => (),
+            Err(e) => panic!("could not remove temporary configuration file: {e}"),
+        };
     }
 
     #[test]
+    #[serial]
     fn test_load_none() {
         let db_url: String = testutils::rand::url();
         let controller_addr: String = testutils::rand::ip();

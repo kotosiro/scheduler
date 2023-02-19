@@ -1,8 +1,7 @@
 use crate::config::Config;
-use anyhow::Result;
+//use anyhow::Result;
 use lapin::Connection;
 use sqlx::PgPool;
-use tracing::warn;
 use uuid::Uuid;
 
 pub struct Controller {

@@ -1,4 +1,3 @@
-use rand::rngs::ThreadRng;
 use rand::Rng;
 
 static CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -22,6 +21,10 @@ pub fn string(length: usize) -> String {
         })
         .collect();
     ret
+}
+
+pub fn bytes(length: usize) -> Vec<u8> {
+    (0..length).map(|_| rand::random::<u8>()).collect()
 }
 
 pub fn port() -> i32 {
