@@ -1,19 +1,14 @@
-use crate::config::Config;
 use anyhow::Result;
 use lapin::Connection;
 use lapin::ConnectionProperties;
 use tracing::info;
 
-async fn lapin_connect(addr: &str) -> Result<Connection> {
+pub async fn connect(addr: &str) -> Result<Connection> {
     info!("connecting to message broker");
     let uri = addr.parse().map_err(anyhow::Error::msg)?;
     let conn = Connection::connect_uri(uri, ConnectionProperties::default()).await?;
     info!("connected to message broker");
     Ok(conn)
-}
-
-pub async fn connect(config: &Config) -> Result<Connection> {
-    lapin_connect(&config.mq_addr).await
 }
 
 #[cfg(test)]
@@ -31,7 +26,6 @@ mod tests {
     use std::time::Duration;
     use testcontainers::clients;
     use testcontainers::images::rabbitmq;
-    use testutils;
 
     #[tokio::test]
     async fn test_connect() {
@@ -39,7 +33,7 @@ mod tests {
         let node = docker.run(rabbitmq::RabbitMq::default());
         let url = format!("amqp://127.0.0.1:{}", node.get_host_port_ipv4(5672));
 
-        let conn = lapin_connect(&url)
+        let conn = connect(&url)
             .await
             .expect("connection should be established");
 

@@ -52,7 +52,6 @@ mod tests {
     use serial_test::serial;
     use std::env;
     use std::path::Path;
-    use testutils;
 
     #[test]
     #[serial]

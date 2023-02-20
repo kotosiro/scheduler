@@ -13,7 +13,6 @@ pub struct Controller {
 
 #[cfg(test)]
 mod tests {
-    
 
     #[test]
     fn test_add() {
