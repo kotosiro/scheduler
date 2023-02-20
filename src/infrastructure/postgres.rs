@@ -34,9 +34,14 @@ pub fn has_conflict(error: &PgDatabaseError) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
     use testcontainers::clients;
     use testcontainers::images::postgres;
-    use testutils;
+
+    #[derive(sqlx::FromRow)]
+    struct Table {
+        pub tablename: String,
+    }
 
     #[tokio::test]
     async fn test_connect() {
@@ -47,10 +52,27 @@ mod tests {
             node.get_host_port_ipv4(5432)
         );
 
-        println!("{}", &url);
+        let expected: HashSet<_> = [String::from("project")].iter().cloned().collect();
+
         let pool = connect(&url)
             .await
             .expect("connection should be established");
-        println!("{:?}", &pool);
+
+        let tables: HashSet<String> = HashSet::from_iter(
+            sqlx::query_as(
+                "SELECT *
+             FROM pg_catalog.pg_tables
+             WHERE schemaname != 'pg_catalog' AND 
+                   schemaname != 'information_schema'",
+            )
+            .fetch_all(&pool)
+            .await
+            .expect("table names should be queried")
+            .into_iter()
+            .map(|t: Table| t.tablename)
+            .collect::<Vec<String>>(),
+        );
+
+        assert_eq!(&expected, &tables);
     }
 }
