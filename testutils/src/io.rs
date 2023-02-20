@@ -1,3 +1,4 @@
+use std::fs::remove_file;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -19,8 +20,26 @@ pub fn tempfile(content: &str) -> Result<NamedTempFile> {
 }
 
 pub fn persist<'a>(content: &'a str, path: &'a Path) -> Result<&'a Path> {
-    let file = NamedTempFile::new()?;
-    let mut persisted = file.persist(&path)?;
-    writeln!(persisted, "{}", content)?;
+    let mut file = File::create(&path)?;
+    file.write_all(content.as_bytes())?;
+    file.sync_all()?;
     Ok(&path)
+}
+
+pub fn remove(path: &Path) -> Result<()> {
+    for _try in 1..=4 {
+        match remove_file(&path) {
+            Ok(_) => {
+                return Ok(());
+            }
+            Err(e) => {
+                if _try < 4 {
+                    continue;
+                } else {
+                    return Err(e);
+                }
+            }
+        }
+    }
+    Ok(())
 }

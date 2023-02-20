@@ -51,7 +51,6 @@ mod tests {
     use super::*;
     use serial_test::serial;
     use std::env;
-    use std::fs::remove_file;
     use std::path::Path;
     use testutils;
 
@@ -66,19 +65,19 @@ mod tests {
         let mq_addr: String = testutils::rand::ip();
         let use_json_log: bool = testutils::rand::bool();
         let log_filter: String = testutils::rand::string(20);
-
-        let data = format!(
-            r#"db_url = "{db_url}"
-controller_addr = "{controller_addr}"
-controller_bind = "{controller_bind}"
-cluster_gossip_addr = "{cluster_gossip_addr}"
-cluster_gossip_bind = "{cluster_gossip_bind}"
-mq_addr = "{mq_addr}"
-use_json_log = {use_json_log}
-log_filter = "{log_filter}""#
+        let conf = format!(
+            include_str!("./config/config.tmpl"),
+            db_url = &db_url,
+            controller_addr = &controller_addr,
+            controller_bind = &controller_bind,
+            cluster_gossip_addr = &cluster_gossip_addr,
+            cluster_gossip_bind = &cluster_gossip_bind,
+            mq_addr = &mq_addr,
+            use_json_log = &use_json_log,
+            log_filter = &log_filter
         );
 
-        let path = testutils::io::persist(&data, Path::new("./config.toml"))
+        let path = testutils::io::persist(&conf, Path::new("./config.toml"))
             .expect("path should be created");
 
         let conf = load(Some(&path)).expect("config object must be loaded");
@@ -92,7 +91,7 @@ log_filter = "{log_filter}""#
         assert_eq!(&use_json_log, &conf.use_json_log);
         assert_eq!(&log_filter, &conf.log_filter);
 
-        remove_file(&path).expect("temporary confiiguration file should be removed");
+        testutils::io::remove(&path).expect("temporary confiiguration file should be removed");
     }
 
     #[test]
