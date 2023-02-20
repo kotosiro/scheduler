@@ -23,7 +23,7 @@ fn builder(file: Option<&Path>) -> ConfigBuilder<DefaultState> {
     let mut builder = config::Config::builder();
 
     builder = builder.add_source(File::from_str(
-        include_str!("etc/defaults.toml"),
+        include_str!("config/defaults.toml"),
         FileFormat::Toml,
     ));
 
@@ -78,32 +78,21 @@ use_json_log = {use_json_log}
 log_filter = "{log_filter}""#
         );
 
-        let path = match testutils::io::persist(&data, Path::new("./config.toml")) {
-            Ok(file) => file,
-            Err(e) => panic!("could not create test configuration file: {e}"),
-        };
+        let path = testutils::io::persist(&data, Path::new("./config.toml"))
+            .expect("path should be created");
 
-        let conf = match load(Some(&path)) {
-            Ok(conf) => conf,
-            Err(e) => {
-                remove_file(&path).unwrap();
-                panic!("config object must be loaded: {e}")
-            }
-        };
+        let conf = load(Some(&path)).expect("config object must be loaded");
 
-        assert_eq!(db_url, conf.db_url);
-        assert_eq!(controller_addr, conf.controller_addr);
-        assert_eq!(controller_bind, conf.controller_bind);
-        assert_eq!(cluster_gossip_addr, conf.cluster_gossip_addr);
-        assert_eq!(cluster_gossip_bind, conf.cluster_gossip_bind);
-        assert_eq!(mq_addr, conf.mq_addr);
-        assert_eq!(use_json_log, conf.use_json_log);
-        assert_eq!(log_filter, conf.log_filter);
+        assert_eq!(&db_url, &conf.db_url);
+        assert_eq!(&controller_addr, &conf.controller_addr);
+        assert_eq!(&controller_bind, &conf.controller_bind);
+        assert_eq!(&cluster_gossip_addr, &conf.cluster_gossip_addr);
+        assert_eq!(&cluster_gossip_bind, &conf.cluster_gossip_bind);
+        assert_eq!(&mq_addr, &conf.mq_addr);
+        assert_eq!(&use_json_log, &conf.use_json_log);
+        assert_eq!(&log_filter, &conf.log_filter);
 
-        match remove_file(&path) {
-            Ok(_) => (),
-            Err(e) => panic!("could not remove temporary configuration file: {e}"),
-        };
+        remove_file(&path).expect("temporary confiiguration file should be removed");
     }
 
     #[test]
@@ -127,19 +116,16 @@ log_filter = "{log_filter}""#
         env::set_var("KOTOSIRO_USE_JSON_LOG", use_json_log.to_string());
         env::set_var("KOTOSIRO_LOG_FILTER", &log_filter);
 
-        let conf = match load(None) {
-            Ok(conf) => conf,
-            Err(e) => panic!("config object must be loaded: {e}"),
-        };
+        let conf = load(None).expect("config object must be loaded");
 
-        assert_eq!(db_url, conf.db_url);
-        assert_eq!(controller_addr, conf.controller_addr);
-        assert_eq!(controller_bind, conf.controller_bind);
-        assert_eq!(cluster_gossip_addr, conf.cluster_gossip_addr);
-        assert_eq!(cluster_gossip_bind, conf.cluster_gossip_bind);
-        assert_eq!(mq_addr, conf.mq_addr);
-        assert_eq!(use_json_log, conf.use_json_log);
-        assert_eq!(log_filter, conf.log_filter);
+        assert_eq!(&db_url, &conf.db_url);
+        assert_eq!(&controller_addr, &conf.controller_addr);
+        assert_eq!(&controller_bind, &conf.controller_bind);
+        assert_eq!(&cluster_gossip_addr, &conf.cluster_gossip_addr);
+        assert_eq!(&cluster_gossip_bind, &conf.cluster_gossip_bind);
+        assert_eq!(&mq_addr, &conf.mq_addr);
+        assert_eq!(&use_json_log, &conf.use_json_log);
+        assert_eq!(&log_filter, &conf.log_filter);
 
         env::remove_var("KOTOSIRO_DB_URL");
         env::remove_var("KOTOSIRO_CONTROLLER_ADDR");

@@ -39,15 +39,14 @@ mod tests {
         let node = docker.run(rabbitmq::RabbitMq::default());
         let url = format!("amqp://127.0.0.1:{}", node.get_host_port_ipv4(5672));
 
-        let conn = match lapin_connect(&url).await {
-            Ok(conn) => conn,
-            Err(e) => panic!("could not create connection: {e}"),
-        };
+        let conn = lapin_connect(&url)
+            .await
+            .expect("connection should be established");
 
-        let channel = match conn.create_channel().await {
-            Ok(channel) => channel,
-            Err(e) => panic!("could not channel: {e}"),
-        };
+        let channel = conn
+            .create_channel()
+            .await
+            .expect("channel should be created");
 
         assert!(channel.status().connected());
 
@@ -57,7 +56,7 @@ mod tests {
         let routing_key = testutils::rand::string(20);
         let payload = testutils::rand::bytes(20);
 
-        match channel
+        channel
             .exchange_declare(
                 &exchange_name,
                 ExchangeKind::Topic,
@@ -65,24 +64,18 @@ mod tests {
                 FieldTable::default(),
             )
             .await
-        {
-            Ok(_) => (),
-            Err(e) => panic!("could not declare channel exchange: {e}"),
-        };
+            .expect("exchange should be declared");
 
-        let queue = match channel
+        let queue = channel
             .queue_declare(
                 &queue_name,
                 QueueDeclareOptions::default(),
                 FieldTable::default(),
             )
             .await
-        {
-            Ok(channel) => channel,
-            Err(e) => panic!("could not declare queue: {e}"),
-        };
+            .expect("queue should be declared");
 
-        match channel
+        channel
             .exchange_declare(
                 &exchange_name,
                 ExchangeKind::Topic,
@@ -90,12 +83,9 @@ mod tests {
                 FieldTable::default(),
             )
             .await
-        {
-            Ok(_) => (),
-            Err(e) => panic!("could not declare channel exchange: {e}"),
-        };
+            .expect("exchange should be decraled");
 
-        match channel
+        channel
             .queue_bind(
                 queue.name().as_str(),
                 &exchange_name,
@@ -104,10 +94,7 @@ mod tests {
                 FieldTable::default(),
             )
             .await
-        {
-            Ok(_) => (),
-            Err(e) => panic!("could not bind queue: {e}"),
-        };
+            .expect("queue should be binded");
 
         let mut consumer = channel
             .basic_consume(
@@ -117,9 +104,9 @@ mod tests {
                 FieldTable::default(),
             )
             .await
-            .unwrap();
+            .expect("comsumer should be created");
 
-        match channel
+        channel
             .basic_publish(
                 &exchange_name,
                 &routing_key,
@@ -128,17 +115,15 @@ mod tests {
                 BasicProperties::default(),
             )
             .await
-        {
-            Ok(_) => (),
-            Err(e) => panic!("could not publish: {e}"),
-        };
+            .expect("channel should be published");
 
-        let consumed = match tokio::time::timeout(Duration::from_secs(10), consumer.next()).await {
-            Ok(Some(consumed)) => consumed,
-            _ => panic!("could not generate timeout"),
-        };
+        let consumed = tokio::time::timeout(Duration::from_secs(10), consumer.next())
+            .await
+            .expect("timeout should be declared")
+            .expect("timeout should be consumed");
 
         let delivery = consumed.expect("Failed to consume delivery!");
+
         assert_eq!(&delivery.data.clone().to_vec(), &payload);
         assert_eq!(&delivery.exchange.as_str(), &exchange_name);
         assert_eq!(&delivery.routing_key.as_str(), &routing_key);
