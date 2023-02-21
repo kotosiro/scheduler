@@ -1,6 +1,6 @@
 mod builder;
-pub mod error;
 use anyhow::Context;
+use anyhow::Result;
 use std::path::Path;
 
 #[derive(serde::Deserialize, Clone, Debug)]
@@ -16,7 +16,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(path: Option<&Path>) -> Result<Config, error::ConfigError> {
+    pub fn load(path: Option<&Path>) -> Result<Config> {
         let config = builder::new(path)
             .build()?
             .try_deserialize()

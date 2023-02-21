@@ -113,8 +113,6 @@ fn init(use_json: bool, filter: &str) {
             .with(fmt_layer)
             .init();
     }
-    //
-    //    Ok(())
 }
 
 pub fn setup(config: &Config) {

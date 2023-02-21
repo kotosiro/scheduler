@@ -1111,7 +1111,6 @@ dependencies = [
  "sqlx",
  "testcontainers",
  "testutils",
- "thiserror",
  "tokio",
  "tracing",
  "tracing-log",
