@@ -61,9 +61,9 @@ mod tests {
         let tables: HashSet<String> = HashSet::from_iter(
             sqlx::query_as(
                 "SELECT *
-             FROM pg_catalog.pg_tables
-             WHERE schemaname != 'pg_catalog' AND 
-                   schemaname != 'information_schema'",
+                 FROM pg_catalog.pg_tables
+                 WHERE schemaname != 'pg_catalog' AND 
+                       schemaname != 'information_schema'",
             )
             .fetch_all(&pool)
             .await

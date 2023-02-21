@@ -1,8 +1,7 @@
-use thiserror::Error;
 use validator::ValidationErrors;
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum DomainError {
     #[error("{0}")]
     Validation(String),
 
@@ -19,8 +18,8 @@ pub enum Error {
     Unexpected(String),
 }
 
-impl From<ValidationErrors> for Error {
+impl From<ValidationErrors> for DomainError {
     fn from(error: ValidationErrors) -> Self {
-        Error::Validation(error.to_string())
+        DomainError::Validation(error.to_string())
     }
 }
