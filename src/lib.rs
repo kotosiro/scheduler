@@ -1,6 +1,6 @@
 pub mod config;
 pub mod controller;
-pub mod domain;
+mod domain;
 mod infra;
 pub mod tracing;
 
