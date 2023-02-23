@@ -1,3 +1,4 @@
+mod domain;
 use crate::config::Config;
 //use anyhow::Result;
 use lapin::Connection;

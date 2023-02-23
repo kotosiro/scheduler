@@ -1,7 +1,7 @@
-use crate::impl_string;
+use crate::impl_string_property;
 use anyhow::Context;
 use anyhow::Result;
-use chrono::NaiveDateTime;
+//use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
 use uuid::Uuid;
@@ -54,7 +54,7 @@ pub struct ProjectName {
     value: String,
 }
 
-impl_string!(ProjectName);
+impl_string_property!(ProjectName);
 
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
 pub struct ProjectDescription {
@@ -62,7 +62,7 @@ pub struct ProjectDescription {
     value: String,
 }
 
-impl_string!(ProjectDescription);
+impl_string_property!(ProjectDescription);
 
 #[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
 pub struct Project {
@@ -72,10 +72,10 @@ pub struct Project {
     name: ProjectName,
     #[getset(get = "pub", set = "pub")]
     description: ProjectDescription,
-    #[getset(get = "pub", set = "pub")]
-    created_at: NaiveDateTime,
-    #[getset(get = "pub", set = "pub")]
-    updated_at: NaiveDateTime,
+    //    #[getset(get = "pub", set = "pub")]
+    //    created_at: NaiveDateTime,
+    //    #[getset(get = "pub", set = "pub")]
+    //    updated_at: NaiveDateTime,
 }
 
 impl Project {
@@ -83,15 +83,15 @@ impl Project {
         id: ProjectId,
         name: ProjectName,
         description: ProjectDescription,
-        created_at: NaiveDateTime,
-        updated_at: NaiveDateTime,
+        //        created_at: NaiveDateTime,
+        //        updated_at: NaiveDateTime,
     ) -> Result<Self> {
         Ok(Self {
             id,
             name,
             description,
-            created_at,
-            updated_at,
+            //            created_at,
+            //            updated_at,
         })
     }
 }

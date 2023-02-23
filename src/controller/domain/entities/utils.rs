@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! impl_string {
+macro_rules! impl_string_property {
     ( $type:tt ) => {
         impl $type {
             pub fn new<S>(value: S) -> anyhow::Result<Self>
