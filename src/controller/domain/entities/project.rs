@@ -1,6 +1,7 @@
 use crate::impl_string_property;
 use anyhow::Context;
 use anyhow::Result;
+use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
 use serde_json::Value as Json;
@@ -115,6 +116,20 @@ pub struct Project {
     description: ProjectDescription,
     #[getset(get = "pub", set = "pub")]
     config: Option<ProjectConfig>,
+    #[getset(get = "pub", set = "pub")]
+    created_at: Option<NaiveDateTime>,
+    #[getset(get = "pub", set = "pub")]
+    updated_at: Option<NaiveDateTime>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ProjectDestructure {
+    pub id: ProjectId,
+    pub name: ProjectName,
+    pub description: ProjectDescription,
+    pub config: Option<ProjectConfig>,
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 impl Project {
@@ -123,18 +138,33 @@ impl Project {
         name: ProjectName,
         description: ProjectDescription,
         config: Option<ProjectConfig>,
+        created_at: Option<NaiveDateTime>,
+        updated_at: Option<NaiveDateTime>,
     ) -> Result<Self> {
         Ok(Self {
             id,
             name,
             description,
             config,
+            created_at,
+            updated_at,
         })
+    }
+
+    pub fn destruct(mut self) -> ProjectDestructure {
+        ProjectDestructure {
+            id: self.id,
+            name: self.name,
+            description: self.description,
+            config: self.config.take(),
+            created_at: self.created_at.take(),
+            updated_at: self.updated_at.take(),
+        }
     }
 }
 
-#[cfg(tests)]
-mod test {
+#[cfg(test)]
+mod tests {
     use super::*;
     use uuid::Uuid;
 
@@ -184,10 +214,10 @@ mod test {
     fn test_valid_project_config() {
         let json = format!(
             r#"
-                {
+                {{
                     "{}": "{}",
                     "{}": {}
-                }
+                }}
             "#,
             testutils::rand::string(10),
             testutils::rand::string(10),
@@ -195,5 +225,22 @@ mod test {
             testutils::rand::i32(-10, 10)
         );
         assert!(matches!(ProjectConfig::try_from(json), Ok(_)));
+    }
+
+    #[test]
+    fn test_invalid_project_config() {
+        let json = format!(
+            r#"
+                {{
+                    "{}": "{}",
+                    "{}": {}
+                }}}}
+            "#,
+            testutils::rand::string(10),
+            testutils::rand::string(10),
+            testutils::rand::string(10),
+            testutils::rand::i32(-10, 10)
+        );
+        assert!(matches!(ProjectConfig::try_from(json), Err(_)));
     }
 }

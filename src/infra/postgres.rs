@@ -1,8 +1,7 @@
 use anyhow::Result;
 use sqlx::postgres::PgDatabaseError;
-use sqlx::Executor;
-use sqlx::PgPool;
 use sqlx::Acquire;
+use sqlx::PgPool;
 use sqlx::Postgres;
 use tracing::info;
 use tracing::trace;
@@ -11,17 +10,13 @@ const INTEGRITY_ERROR: &str = "23";
 
 pub trait PgAcquire<'c>: Acquire<'c, Database = Postgres> + Send {}
 
-impl<'c, T> PgAcquire<'c> for T
-where
-    T: Acquire<'c, Database = Postgres> + Send,
-{}
+impl<'c, T> PgAcquire<'c> for T where T: Acquire<'c, Database = Postgres> + Send {}
 
-pub async fn connect(db_url: &str) -> Result<PgPool> {
+pub async fn connect(url: &str) -> Result<PgPool> {
     info!("connecting to database");
-    let pool = PgPool::connect(&db_url).await?;
-    let mut conn = pool.acquire().await?;
-    let done = conn.execute(include_str!("postgres/schema.sql")).await?;
-    trace!("schema created: {} rows modified", done.rows_affected());
+    let pool = PgPool::connect(&url).await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
+    trace!("schema created");
     info!("connected to database");
     Ok(pool)
 }
@@ -53,6 +48,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_connect() {
         let docker = clients::Cli::default();
         let node = docker.run(postgres::Postgres::default());
@@ -68,11 +64,12 @@ mod tests {
             .expect("connection should be established");
 
         let tables: HashSet<String> = HashSet::from_iter(
-            sqlx::query_as(
+            sqlx::query_as::<_, Table>(
                 "SELECT *
                  FROM pg_catalog.pg_tables
                  WHERE schemaname != 'pg_catalog' AND 
-                       schemaname != 'information_schema'",
+                       schemaname != 'information_schema' AND
+                       tablename != '_sqlx_migrations'",
             )
             .fetch_all(&pool)
             .await

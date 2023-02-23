@@ -1,3 +1,4 @@
+-- Add migration script here
 CREATE TABLE IF NOT EXISTS project (
     id UUID PRIMARY KEY,
     name VARCHAR NOT NULL UNIQUE,

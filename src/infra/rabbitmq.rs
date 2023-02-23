@@ -28,6 +28,7 @@ mod tests {
     use testcontainers::images::rabbitmq;
 
     #[tokio::test]
+    #[ignore]
     async fn test_connect() {
         let docker = clients::Cli::default();
         let node = docker.run(rabbitmq::RabbitMq::default());

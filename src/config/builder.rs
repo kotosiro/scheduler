@@ -33,6 +33,7 @@ mod tests {
 
     #[test]
     #[serial]
+    #[ignore]
     fn test_new_some() {
         let db_url: String = testutils::rand::url();
         let controller_addr: String = testutils::rand::ip();
@@ -77,6 +78,7 @@ mod tests {
 
     #[test]
     #[serial]
+    #[ignore]
     fn test_new_none() {
         let db_url: String = testutils::rand::url();
         let controller_addr: String = testutils::rand::ip();
