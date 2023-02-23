@@ -1,9 +1,9 @@
 use crate::impl_string_property;
 use anyhow::Context;
 use anyhow::Result;
-//use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
+use serde_json::Value as Json;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -64,6 +64,47 @@ pub struct ProjectDescription {
 
 impl_string_property!(ProjectDescription);
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectConfig {
+    value: Json,
+}
+
+impl ProjectConfig {
+    pub fn new(value: Json) -> Result<ProjectConfig> {
+        Ok(ProjectConfig { value })
+    }
+
+    pub fn to_json(&self) -> Json {
+        self.value.clone()
+    }
+}
+
+impl std::fmt::Display for ProjectConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value.to_string())
+    }
+}
+
+impl TryFrom<&str> for ProjectConfig {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
+        let value = serde_json::from_str(value)
+            .context(format!(r#"failed to parse config "{}" as json"#, value))?;
+        Ok(ProjectConfig { value })
+    }
+}
+
+impl TryFrom<String> for ProjectConfig {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        let value = serde_json::from_str(value.as_str())
+            .context(format!(r#"failed to parse config "{}" as json"#, value))?;
+        Ok(ProjectConfig { value })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
 pub struct Project {
     #[getset(get = "pub")]
@@ -72,10 +113,8 @@ pub struct Project {
     name: ProjectName,
     #[getset(get = "pub", set = "pub")]
     description: ProjectDescription,
-    //    #[getset(get = "pub", set = "pub")]
-    //    created_at: NaiveDateTime,
-    //    #[getset(get = "pub", set = "pub")]
-    //    updated_at: NaiveDateTime,
+    #[getset(get = "pub", set = "pub")]
+    config: Option<ProjectConfig>,
 }
 
 impl Project {
@@ -83,15 +122,13 @@ impl Project {
         id: ProjectId,
         name: ProjectName,
         description: ProjectDescription,
-        //        created_at: NaiveDateTime,
-        //        updated_at: NaiveDateTime,
+        config: Option<ProjectConfig>,
     ) -> Result<Self> {
         Ok(Self {
             id,
             name,
             description,
-            //            created_at,
-            //            updated_at,
+            config,
         })
     }
 }
@@ -141,5 +178,22 @@ mod test {
     #[test]
     fn test_invalid_project_description() {
         assert!(matches!(ProjectDescription::new(""), Err(_)));
+    }
+
+    #[test]
+    fn test_valid_project_config() {
+        let json = format!(
+            r#"
+                {
+                    "{}": "{}",
+                    "{}": {}
+                }
+            "#,
+            testutils::rand::string(10),
+            testutils::rand::string(10),
+            testutils::rand::string(10),
+            testutils::rand::i32(-10, 10)
+        );
+        assert!(matches!(ProjectConfig::try_from(json), Ok(_)));
     }
 }

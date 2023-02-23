@@ -2,10 +2,19 @@ use anyhow::Result;
 use sqlx::postgres::PgDatabaseError;
 use sqlx::Executor;
 use sqlx::PgPool;
+use sqlx::Acquire;
+use sqlx::Postgres;
 use tracing::info;
 use tracing::trace;
 
 const INTEGRITY_ERROR: &str = "23";
+
+pub trait PgAcquire<'c>: Acquire<'c, Database = Postgres> + Send {}
+
+impl<'c, T> PgAcquire<'c> for T
+where
+    T: Acquire<'c, Database = Postgres> + Send,
+{}
 
 pub async fn connect(db_url: &str) -> Result<PgPool> {
     info!("connecting to database");

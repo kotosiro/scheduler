@@ -1,5 +1,5 @@
-mod postgres;
-mod rabbitmq;
+pub mod postgres;
+pub mod rabbitmq;
 use crate::config::Config;
 use anyhow::Result;
 use lapin::Connection;
