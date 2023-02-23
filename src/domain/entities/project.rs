@@ -38,6 +38,16 @@ impl TryFrom<&str> for ProjectId {
     }
 }
 
+impl TryFrom<String> for ProjectId {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        let value = Uuid::parse_str(value.as_str())
+            .context(format!(r#"failed to parse id "{}" as uuid"#, value))?;
+        Ok(ProjectId { value })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
 pub struct ProjectName {
     #[validate(length(min = 1))]
@@ -55,15 +65,81 @@ pub struct ProjectDescription {
 impl_string!(ProjectDescription);
 
 #[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
-struct Project {
+pub struct Project {
     #[getset(get = "pub")]
     id: ProjectId,
     #[getset(get = "pub", set = "pub")]
     name: ProjectName,
     #[getset(get = "pub", set = "pub")]
-    pub description: ProjectDescription,
+    description: ProjectDescription,
     #[getset(get = "pub", set = "pub")]
-    pub created_at: NaiveDateTime,
+    created_at: NaiveDateTime,
     #[getset(get = "pub", set = "pub")]
-    pub updated_at: NaiveDateTime,
+    updated_at: NaiveDateTime,
+}
+
+impl Project {
+    pub fn new(
+        id: ProjectId,
+        name: ProjectName,
+        description: ProjectDescription,
+        created_at: NaiveDateTime,
+        updated_at: NaiveDateTime,
+    ) -> Result<Self> {
+        Ok(Self {
+            id,
+            name,
+            description,
+            created_at,
+            updated_at,
+        })
+    }
+}
+
+#[cfg(tests)]
+mod test {
+    use super::*;
+    use uuid::Uuid;
+
+    #[test]
+    fn test_valid_uuid() {
+        assert!(matches!(
+            ProjectId::try_from(Uuid::new_v4().to_string()),
+            Ok(_)
+        ));
+    }
+
+    #[test]
+    fn test_invalid_uuid() {
+        assert!(matches!(
+            ProjectId::try_from(testutils::rand::string(255)),
+            Err(_)
+        ));
+    }
+
+    #[test]
+    fn test_valid_project_name() {
+        assert!(matches!(
+            ProjectName::new(testutils::rand::string(255)),
+            Ok(_)
+        ));
+    }
+
+    #[test]
+    fn test_invalid_project_name() {
+        assert!(matches!(ProjectName::new(""), Err(_)));
+    }
+
+    #[test]
+    fn test_valid_project_description() {
+        assert!(matches!(
+            ProjectDescription::new(testutils::rand::string(255)),
+            Ok(_)
+        ));
+    }
+
+    #[test]
+    fn test_invalid_project_description() {
+        assert!(matches!(ProjectDescription::new(""), Err(_)));
+    }
 }

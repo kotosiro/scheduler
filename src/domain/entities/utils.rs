@@ -2,8 +2,13 @@
 macro_rules! impl_string {
     ( $type:tt ) => {
         impl $type {
-            pub fn new(value: String) -> anyhow::Result<Self> {
-                let object = Self { value: value };
+            pub fn new<S>(value: S) -> anyhow::Result<Self>
+            where
+                S: Into<String>,
+            {
+                let object = Self {
+                    value: value.into(),
+                };
                 object.validate()?;
                 Ok(object)
             }

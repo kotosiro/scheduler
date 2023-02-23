@@ -1,4 +1,5 @@
 use rand::Rng;
+use uuid::Uuid;
 
 static CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -45,4 +46,8 @@ pub fn ip() -> String {
 
 pub fn url() -> String {
     format!("{}://{}:{}", string(5), string(10), port())
+}
+
+pub fn uuid() -> Uuid {
+    Uuid::new_v4()
 }
