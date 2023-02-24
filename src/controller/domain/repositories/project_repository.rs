@@ -9,6 +9,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use serde_json::Value as Json;
+use sqlx::postgres::PgQueryResult;
 use uuid::Uuid;
 
 #[derive(sqlx::FromRow)]
@@ -27,13 +28,19 @@ pub trait ProjectRepository: Send + Sync + 'static {
         &self,
         project: &Project,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<()>;
+    ) -> Result<PgQueryResult>;
 
     async fn delete(
         &self,
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<()>;
+    ) -> Result<PgQueryResult>;
+
+    async fn list(
+        &self,
+        limit: Option<i64>,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Vec<Project>>;
 
     async fn find_by_id(
         &self,
@@ -50,11 +57,12 @@ impl ProjectRepository for PgProjectRepository {
         &self,
         project: &Project,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<()> {
+    ) -> Result<PgQueryResult> {
         let mut conn = executor
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
+
         sqlx::query(
             "INSERT INTO project(id, name, description, config)
              VALUES($1, $2, $3, $4)
@@ -73,19 +81,19 @@ impl ProjectRepository for PgProjectRepository {
         .context(format!(
             r#"failed to upsert "{}" into [project]"#,
             project.id().to_uuid()
-        ))?;
-        Ok(())
+        ))
     }
 
     async fn delete(
         &self,
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<()> {
+    ) -> Result<PgQueryResult> {
         let mut conn = executor
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
+
         sqlx::query(
             "DELETE FROM project
              WHERE id = $1",
@@ -96,8 +104,55 @@ impl ProjectRepository for PgProjectRepository {
         .context(format!(
             r#"failed to delete "{}" from [project]"#,
             id.to_uuid()
+        ))
+    }
+
+    async fn list(
+        &self,
+        limit: Option<i64>,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Vec<Project>> {
+        let mut conn = executor
+            .acquire()
+            .await
+            .context("failed to acquire postgres connection")?;
+
+        let rows: Vec<ProjectRow> = sqlx::query_as::<_, ProjectRow>(
+            "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
+             FROM project
+             ORDER BY name
+             LIMIT $1",
+        )
+        .bind(limit.unwrap_or(100))
+        .fetch_all(&mut *conn)
+        .await
+        .context(format!(
+            "failed to list {} project(s) from [project]",
+            limit.unwrap_or(100)
         ))?;
-        Ok(())
+
+        let projects = rows
+            .into_iter()
+            .flat_map(|mut row| {
+                let id = ProjectId::new(row.id)?;
+                let name = ProjectName::new(row.name)?;
+                let description = ProjectDescription::new(row.description)?;
+                let config = match row.config.take() {
+                    Some(json) => ProjectConfig::new(json).ok(),
+                    None => None,
+                };
+                Project::new(
+                    id,
+                    name,
+                    description,
+                    config,
+                    Some(row.created_at),
+                    Some(row.updated_at),
+                )
+            })
+            .collect();
+
+        Ok(projects)
     }
 
     async fn find_by_id(
@@ -109,7 +164,9 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-        let row: Option<ProjectRow> = sqlx::query_as::<_, ProjectRow>(
+
+        let row: Option<ProjectRow> =
+        sqlx::query_as::<_, ProjectRow>(
             "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
              FROM project
              WHERE id = $1",
@@ -122,24 +179,25 @@ impl ProjectRepository for PgProjectRepository {
             id.to_uuid()
         ))?;
 
-        let project = row.map(|mut row| {
-            let id = ProjectId::new(row.id)?;
-            let name = ProjectName::new(row.name)?;
-            let description = ProjectDescription::new(row.description)?;
-            let config = match row.config.take() {
-                Some(json) => ProjectConfig::new(json).ok(),
-                None => None,
-            };
-            Project::new(
-                id,
-                name,
-                description,
-                config,
-                Some(row.created_at),
-                Some(row.updated_at),
-            )
-        });
-        let project = project.transpose()?;
+        let project = row
+            .map(|mut row| {
+                let id = ProjectId::new(row.id)?;
+                let name = ProjectName::new(row.name)?;
+                let description = ProjectDescription::new(row.description)?;
+                let config = match row.config.take() {
+                    Some(json) => ProjectConfig::new(json).ok(),
+                    None => None,
+                };
+                Project::new(
+                    id,
+                    name,
+                    description,
+                    config,
+                    Some(row.created_at),
+                    Some(row.updated_at),
+                )
+            })
+            .transpose()?;
 
         Ok(project)
     }
@@ -152,6 +210,7 @@ mod tests {
     use anyhow::Result;
     use sqlx::PgConnection;
     use sqlx::PgPool;
+    use std::cmp::min;
 
     async fn prepare_project(tx: &mut PgConnection) -> Result<Project> {
         let id = ProjectId::new(Uuid::new_v4()).context("cannot parse project id properly")?;
@@ -169,13 +228,13 @@ mod tests {
     }
 
     #[sqlx::test]
-    //#[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    #[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_create_and_find_by_id(pool: PgPool) -> Result<()> {
+        let repo = PgProjectRepository;
         let mut tx = pool
             .begin()
             .await
             .expect("transaction should be started properly");
-        let repo = PgProjectRepository;
 
         let project = prepare_project(&mut tx)
             .await
@@ -195,6 +254,67 @@ mod tests {
         } else {
             panic!("inserted project should be found");
         }
+
+        tx.rollback()
+            .await
+            .expect("rollback should be done properly");
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    #[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    async fn test_create_and_list_with_default_limit(pool: PgPool) -> Result<()> {
+        let repo = PgProjectRepository;
+        let mut tx = pool
+            .begin()
+            .await
+            .expect("transaction should be started properly");
+
+        let records = testutils::rand::i32(0, 200);
+        for _ in 0..records {
+            prepare_project(&mut tx)
+                .await
+                .expect("new project should be created");
+        }
+
+        let fetched = repo
+            .list(None, &mut tx)
+            .await
+            .expect("inserted project should be listed");
+
+        assert_eq!(min(records, 100) as usize, fetched.len());
+
+        tx.rollback()
+            .await
+            .expect("rollback should be done properly");
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    #[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    async fn test_create_and_list_with_specified_limit(pool: PgPool) -> Result<()> {
+        let repo = PgProjectRepository;
+        let mut tx = pool
+            .begin()
+            .await
+            .expect("transaction should be started properly");
+
+        let records = testutils::rand::i32(0, 200);
+        for _ in 0..records {
+            prepare_project(&mut tx)
+                .await
+                .expect("new project should be created");
+        }
+
+        let limit = testutils::rand::i32(0, 200);
+        let fetched = repo
+            .list(Some(limit.into()), &mut tx)
+            .await
+            .expect("inserted project should be listed");
+
+        assert_eq!(min(records, limit) as usize, fetched.len());
 
         tx.rollback()
             .await
