@@ -1,3 +1,4 @@
+use anyhow::Context;
 use anyhow::Result;
 use sqlx::postgres::PgDatabaseError;
 use sqlx::Acquire;
@@ -14,8 +15,13 @@ impl<'c, T> PgAcquire<'c> for T where T: Acquire<'c, Database = Postgres> + Send
 
 pub async fn connect(url: &str) -> Result<PgPool> {
     info!("connecting to database");
-    let pool = PgPool::connect(&url).await?;
-    sqlx::migrate!("./migrations").run(&pool).await?;
+    let pool = PgPool::connect(&url)
+        .await
+        .context("failed to acquire postgres connection")?;
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .context("failed to migrate postgres")?;
     trace!("schema created");
     info!("connected to database");
     Ok(pool)

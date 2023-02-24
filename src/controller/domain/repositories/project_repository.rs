@@ -51,15 +51,18 @@ impl ProjectRepository for PgProjectRepository {
         project: &Project,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<()> {
-        let mut conn = executor.acquire().await.context("db connection failed")?;
+        let mut conn = executor
+            .acquire()
+            .await
+            .context("failed to acquire postgres connection")?;
         sqlx::query(
             "INSERT INTO project(id, name, description, config)
-                     VALUES($1, $2, $3, $4)
-                     ON CONFLICT(id)
-                     DO UPDATE
-                     SET name = $2,
-                         description = $3,
-                         config = COALESCE($4, project.config)",
+             VALUES($1, $2, $3, $4)
+             ON CONFLICT(id)
+             DO UPDATE
+             SET name = $2,
+                 description = $3,
+                 config = COALESCE($4, project.config)",
         )
         .bind(project.id().to_uuid())
         .bind(project.name().as_str())
@@ -67,7 +70,10 @@ impl ProjectRepository for PgProjectRepository {
         .bind(project.config().as_ref().map(|config| config.to_json()))
         .execute(&mut *conn)
         .await
-        .context("db query execution failed")?;
+        .context(format!(
+            r#"failed to upsert "{}" into [project]"#,
+            project.id().to_uuid()
+        ))?;
         Ok(())
     }
 
@@ -76,7 +82,10 @@ impl ProjectRepository for PgProjectRepository {
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<()> {
-        let mut conn = executor.acquire().await.context("db connection failed")?;
+        let mut conn = executor
+            .acquire()
+            .await
+            .context("failed to acquire postgres connection")?;
         sqlx::query(
             "DELETE FROM project
              WHERE id = $1",
@@ -84,7 +93,10 @@ impl ProjectRepository for PgProjectRepository {
         .bind(id.to_uuid())
         .execute(&mut *conn)
         .await
-        .context("db query execution failed")?;
+        .context(format!(
+            r#"failed to delete "{}" from [project]"#,
+            id.to_uuid()
+        ))?;
         Ok(())
     }
 
@@ -93,7 +105,10 @@ impl ProjectRepository for PgProjectRepository {
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Option<Project>> {
-        let mut conn = executor.acquire().await.context("db connection failed")?;
+        let mut conn = executor
+            .acquire()
+            .await
+            .context("failed to acquire postgres connection")?;
         let row: Option<ProjectRow> = sqlx::query_as::<_, ProjectRow>(
             "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
              FROM project
@@ -101,7 +116,11 @@ impl ProjectRepository for PgProjectRepository {
         )
         .bind(id.to_uuid())
         .fetch_optional(&mut *conn)
-        .await.context("db query execution failed")?;
+        .await
+        .context(format!(
+            r#"failed to select "{}" from [project]"#,
+            id.to_uuid()
+        ))?;
 
         let project = row.map(|mut row| {
             let id = ProjectId::new(row.id)?;
@@ -137,20 +156,20 @@ mod tests {
     async fn prepare_project(tx: &mut PgConnection) -> Result<Project> {
         let id = ProjectId::new(Uuid::new_v4()).context("cannot parse project id properly")?;
         let name = ProjectName::new(testutils::rand::string(10))
-            .context("cannot parse project name properly")?;
+            .context("failed to parse project name")?;
         let description = ProjectDescription::new(testutils::rand::string(10))
-            .context("cannot parse project description properly")?;
+            .context("failed to parse project description")?;
         let project = Project::new(id.clone(), name, description, None, None, None)
-            .context("cannot create project properly")?;
+            .context("failed to create project")?;
         let repo = PgProjectRepository;
         repo.create(&project, tx)
             .await
-            .context("cannot insert project properly")?;
+            .context("failed to insert project")?;
         Ok(project)
     }
 
     #[sqlx::test]
-    //    #[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    //#[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_create_and_find_by_id(pool: PgPool) -> Result<()> {
         let mut tx = pool
             .begin()

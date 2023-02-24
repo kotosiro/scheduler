@@ -1,3 +1,4 @@
+use anyhow::Context;
 use anyhow::Result;
 use lapin::Connection;
 use lapin::ConnectionProperties;
@@ -6,7 +7,9 @@ use tracing::info;
 pub async fn connect(addr: &str) -> Result<Connection> {
     info!("connecting to message broker");
     let uri = addr.parse().map_err(anyhow::Error::msg)?;
-    let conn = Connection::connect_uri(uri, ConnectionProperties::default()).await?;
+    let conn = Connection::connect_uri(uri, ConnectionProperties::default())
+        .await
+        .context("failed to acquire rabbitmq connection")?;
     info!("connected to message broker");
     Ok(conn)
 }
