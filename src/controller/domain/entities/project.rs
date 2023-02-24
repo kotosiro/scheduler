@@ -123,7 +123,7 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct ProjectDestructure {
+pub struct ProjectDestructure {
     pub id: ProjectId,
     pub name: ProjectName,
     pub description: ProjectDescription,

@@ -54,16 +54,13 @@ mod tests {
             use_json_log = &use_json_log,
             log_filter = &log_filter
         );
-
         let path = testutils::io::persist(&config, Path::new("./config.toml"))
             .expect("path should be created");
-
         let config: crate::config::Config = new(Some(&path))
             .build()
             .expect("builder should be able to build configuration")
             .try_deserialize()
             .expect("config object must be loaded");
-
         assert_eq!(&db_url, &config.db_url);
         assert_eq!(&controller_addr, &config.controller_addr);
         assert_eq!(&controller_bind, &config.controller_bind);
@@ -72,7 +69,6 @@ mod tests {
         assert_eq!(&mq_addr, &config.mq_addr);
         assert_eq!(&use_json_log, &config.use_json_log);
         assert_eq!(&log_filter, &config.log_filter);
-
         testutils::io::remove(&path).expect("temporary confiiguration file should be removed");
     }
 
@@ -88,7 +84,6 @@ mod tests {
         let mq_addr: String = testutils::rand::ip();
         let use_json_log: bool = testutils::rand::bool();
         let log_filter: String = testutils::rand::string(20);
-
         env::set_var("KOTOSIRO_DB_URL", &db_url);
         env::set_var("KOTOSIRO_CONTROLLER_ADDR", &controller_addr);
         env::set_var("KOTOSIRO_CONTROLLER_BIND", &controller_bind);
@@ -97,13 +92,11 @@ mod tests {
         env::set_var("KOTOSIRO_MQ_ADDR", &mq_addr);
         env::set_var("KOTOSIRO_USE_JSON_LOG", use_json_log.to_string());
         env::set_var("KOTOSIRO_LOG_FILTER", &log_filter);
-
         let config: crate::config::Config = new(None)
             .build()
             .expect("builder should be able to build configuration")
             .try_deserialize()
             .expect("config object must be loaded");
-
         assert_eq!(&db_url, &config.db_url);
         assert_eq!(&controller_addr, &config.controller_addr);
         assert_eq!(&controller_bind, &config.controller_bind);
@@ -112,7 +105,6 @@ mod tests {
         assert_eq!(&mq_addr, &config.mq_addr);
         assert_eq!(&use_json_log, &config.use_json_log);
         assert_eq!(&log_filter, &config.log_filter);
-
         env::remove_var("KOTOSIRO_DB_URL");
         env::remove_var("KOTOSIRO_CONTROLLER_ADDR");
         env::remove_var("KOTOSIRO_CONTROLLER_BIND");

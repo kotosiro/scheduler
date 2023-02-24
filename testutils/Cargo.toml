@@ -6,6 +6,7 @@ edition = "2021"
 rust-version = "1.67"
 
 [dependencies]
+chrono = "0.4.23"
 rand = "0.8.5"
 regex = "1.4.2"
 tempfile = "3.3.0"

@@ -5,7 +5,6 @@ use tracing::debug;
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
-
     let app = clap::Command::new("kotosiro")
         .author("Shingo OKAWA <shingo.okawa.g.h.c@gmail.com>")
         .version(kotosiro::VERSION)
@@ -23,12 +22,10 @@ async fn main() -> Result<()> {
                 .after_help("The controller has an API server embedded."),
         )
         .subcommand(clap::Command::new("runner").about("Launch the runner process"));
-
     let args = app.get_matches();
     let conf = args.get_one::<String>("config").map(AsRef::as_ref);
     let conf = Config::load(conf)?;
     kotosiro::tracing::setup(&conf);
-
     debug!(
         db_url = &conf.db_url,
         controller_addr = &conf.controller_addr,
@@ -37,7 +34,6 @@ async fn main() -> Result<()> {
         cluster_gossip_bind = &conf.cluster_gossip_bind,
         mq_addr = &conf.mq_addr,
     );
-
     match args.subcommand().expect("subcommand is required") {
         ("controller", _args) => {
             debug!("controller is called");

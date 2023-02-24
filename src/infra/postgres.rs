@@ -62,13 +62,10 @@ mod tests {
             "postgres://postgres:secret@127.0.0.1:{}",
             node.get_host_port_ipv4(5432)
         );
-
         let expected: HashSet<_> = [String::from("project")].iter().cloned().collect();
-
         let pool = connect(&url)
             .await
             .expect("connection should be established");
-
         let tables: HashSet<String> = HashSet::from_iter(
             sqlx::query_as::<_, Table>(
                 "SELECT *
@@ -84,7 +81,6 @@ mod tests {
             .map(|t: Table| t.tablename)
             .collect::<Vec<String>>(),
         );
-
         assert_eq!(&expected, &tables);
     }
 }

@@ -68,7 +68,6 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-
         sqlx::query(
             "INSERT INTO project(id, name, description, config)
              VALUES($1, $2, $3, $4)
@@ -99,7 +98,6 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-
         sqlx::query(
             "DELETE FROM project
              WHERE id = $1",
@@ -122,7 +120,6 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-
         let rows: Vec<ProjectRow> = sqlx::query_as::<_, ProjectRow>(
             "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
              FROM project
@@ -136,7 +133,6 @@ impl ProjectRepository for PgProjectRepository {
             "failed to list {} project(s) from [project]",
             limit.unwrap_or(100)
         ))?;
-
         let projects = rows
             .into_iter()
             .flat_map(|mut row| {
@@ -157,7 +153,6 @@ impl ProjectRepository for PgProjectRepository {
                 )
             })
             .collect();
-
         Ok(projects)
     }
 
@@ -170,7 +165,6 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-
         let row: Option<ProjectRow> =
         sqlx::query_as::<_, ProjectRow>(
             "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
@@ -184,7 +178,6 @@ impl ProjectRepository for PgProjectRepository {
             r#"failed to select "{}" from [project]"#,
             id.to_uuid()
         ))?;
-
         let project = row
             .map(|mut row| {
                 let id = ProjectId::new(row.id)?;
@@ -204,7 +197,6 @@ impl ProjectRepository for PgProjectRepository {
                 )
             })
             .transpose()?;
-
         Ok(project)
     }
 
@@ -217,7 +209,6 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-
         let row: Option<ProjectRow> =
         sqlx::query_as::<_, ProjectRow>(
             "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
@@ -231,7 +222,6 @@ impl ProjectRepository for PgProjectRepository {
             r#"failed to select "{}" from [project]"#,
             name.as_str()
         ))?;
-
         let project = row
             .map(|mut row| {
                 let id = ProjectId::new(row.id)?;
@@ -251,7 +241,6 @@ impl ProjectRepository for PgProjectRepository {
                 )
             })
             .transpose()?;
-
         Ok(project)
     }
 }
@@ -265,7 +254,8 @@ mod tests {
     use sqlx::PgPool;
     use std::cmp::min;
 
-    async fn prepare_project(tx: &mut PgConnection) -> Result<Project> {
+    async fn create_project(tx: &mut PgConnection) -> Result<Project> {
+        let repo = PgProjectRepository;
         let id = ProjectId::new(Uuid::new_v4()).context("cannot parse project id properly")?;
         let name = ProjectName::new(testutils::rand::string(10))
             .context("failed to parse project name")?;
@@ -273,7 +263,6 @@ mod tests {
             .context("failed to parse project description")?;
         let project = Project::new(id.clone(), name, description, None, None, None)
             .context("failed to create project")?;
-        let repo = PgProjectRepository;
         repo.create(&project, tx)
             .await
             .context("failed to insert project")?;
@@ -288,15 +277,13 @@ mod tests {
             .begin()
             .await
             .expect("transaction should be started properly");
-
-        let project = prepare_project(&mut tx)
+        let project = create_project(&mut tx)
             .await
             .expect("new project should be created");
         let fetched = repo
             .find_by_id(&project.id(), &mut tx)
             .await
             .expect("inserted project should be found");
-
         if let Some(fetched) = fetched {
             assert_eq!(fetched.id(), project.id());
             assert_eq!(fetched.name(), project.name());
@@ -307,31 +294,27 @@ mod tests {
         } else {
             panic!("inserted project should be found");
         }
-
         tx.rollback()
             .await
             .expect("rollback should be done properly");
-
         Ok(())
     }
 
     #[sqlx::test]
-    //#[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_create_and_find_by_name(pool: PgPool) -> Result<()> {
         let repo = PgProjectRepository;
         let mut tx = pool
             .begin()
             .await
             .expect("transaction should be started properly");
-
-        let project = prepare_project(&mut tx)
+        let project = create_project(&mut tx)
             .await
             .expect("new project should be created");
         let fetched = repo
             .find_by_name(&project.name(), &mut tx)
             .await
             .expect("inserted project should be found");
-
         if let Some(fetched) = fetched {
             assert_eq!(fetched.id(), project.id());
             assert_eq!(fetched.name(), project.name());
@@ -342,11 +325,9 @@ mod tests {
         } else {
             panic!("inserted project should be found");
         }
-
         tx.rollback()
             .await
             .expect("rollback should be done properly");
-
         Ok(())
     }
 
@@ -358,25 +339,20 @@ mod tests {
             .begin()
             .await
             .expect("transaction should be started properly");
-
         let records = testutils::rand::i32(0, 200);
         for _ in 0..records {
-            prepare_project(&mut tx)
+            create_project(&mut tx)
                 .await
                 .expect("new project should be created");
         }
-
         let fetched = repo
             .list(None, &mut tx)
             .await
             .expect("inserted project should be listed");
-
         assert_eq!(min(records, 100) as usize, fetched.len());
-
         tx.rollback()
             .await
             .expect("rollback should be done properly");
-
         Ok(())
     }
 
@@ -388,26 +364,21 @@ mod tests {
             .begin()
             .await
             .expect("transaction should be started properly");
-
         let records = testutils::rand::i32(0, 200);
         for _ in 0..records {
-            prepare_project(&mut tx)
+            create_project(&mut tx)
                 .await
                 .expect("new project should be created");
         }
-
         let limit = testutils::rand::i32(0, 200);
         let fetched = repo
             .list(Some(limit.into()), &mut tx)
             .await
             .expect("inserted project should be listed");
-
         assert_eq!(min(records, limit) as usize, fetched.len());
-
         tx.rollback()
             .await
             .expect("rollback should be done properly");
-
         Ok(())
     }
 }

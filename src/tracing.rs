@@ -44,11 +44,9 @@ impl<'w> FormatFields<'w> for Log {
             fields: String::new(),
             message: String::new(),
         };
-
         fields.record(&mut visitor);
         write!(writer, "{}", visitor.message.bright_white())?;
         write!(writer, "{}", visitor.fields)?;
-
         Ok(())
     }
 }
@@ -73,7 +71,6 @@ where
             metadata.level(),
             width = 10
         );
-
         writeln!(writer, "{}", colorize(*metadata.level(), header))?;
         ctx.field_format().format_fields(writer.by_ref(), event)?;
         ctx.visit_spans(|span| {
@@ -81,7 +78,6 @@ where
             let data = ext.get::<FormattedFields<Log>>().unwrap();
             write!(writer, "{}", data)
         })?;
-
         Ok(())
     }
 }
@@ -100,7 +96,6 @@ impl Visit for LogVisitor {
 
 fn init(use_json: bool, filter: &str) {
     let filter_layer = EnvFilter::new(filter);
-
     if use_json {
         tracing_subscriber::registry()
             .with(filter_layer)

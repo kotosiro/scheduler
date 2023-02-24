@@ -1,3 +1,5 @@
+use chrono::NaiveDateTime;
+use chrono::Utc;
 use rand::Rng;
 use uuid::Uuid;
 
@@ -26,6 +28,10 @@ pub fn string(length: usize) -> String {
 
 pub fn bytes(length: usize) -> Vec<u8> {
     (0..length).map(|_| rand::random::<u8>()).collect()
+}
+
+pub fn now() -> NaiveDateTime {
+    Utc::now().naive_utc()
 }
 
 pub fn port() -> i32 {
