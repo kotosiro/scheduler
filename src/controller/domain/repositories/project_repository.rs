@@ -47,6 +47,12 @@ pub trait ProjectRepository: Send + Sync + 'static {
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Option<Project>>;
+
+    async fn find_by_name(
+        &self,
+        name: &ProjectName,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Option<Project>>;
 }
 
 pub struct PgProjectRepository;
@@ -201,6 +207,53 @@ impl ProjectRepository for PgProjectRepository {
 
         Ok(project)
     }
+
+    async fn find_by_name(
+        &self,
+        name: &ProjectName,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Option<Project>> {
+        let mut conn = executor
+            .acquire()
+            .await
+            .context("failed to acquire postgres connection")?;
+
+        let row: Option<ProjectRow> =
+        sqlx::query_as::<_, ProjectRow>(
+            "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
+             FROM project
+             WHERE name = $1",
+        )
+        .bind(name.as_str())
+        .fetch_optional(&mut *conn)
+        .await
+        .context(format!(
+            r#"failed to select "{}" from [project]"#,
+            name.as_str()
+        ))?;
+
+        let project = row
+            .map(|mut row| {
+                let id = ProjectId::new(row.id)?;
+                let name = ProjectName::new(row.name)?;
+                let description = ProjectDescription::new(row.description)?;
+                let config = match row.config.take() {
+                    Some(json) => ProjectConfig::new(json).ok(),
+                    None => None,
+                };
+                Project::new(
+                    id,
+                    name,
+                    description,
+                    config,
+                    Some(row.created_at),
+                    Some(row.updated_at),
+                )
+            })
+            .transpose()?;
+
+        Ok(project)
+    }
 }
 
 #[cfg(test)]
@@ -228,7 +281,7 @@ mod tests {
     }
 
     #[sqlx::test]
-    #[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_create_and_find_by_id(pool: PgPool) -> Result<()> {
         let repo = PgProjectRepository;
         let mut tx = pool
@@ -263,7 +316,42 @@ mod tests {
     }
 
     #[sqlx::test]
-    #[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    //#[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    async fn test_create_and_find_by_name(pool: PgPool) -> Result<()> {
+        let repo = PgProjectRepository;
+        let mut tx = pool
+            .begin()
+            .await
+            .expect("transaction should be started properly");
+
+        let project = prepare_project(&mut tx)
+            .await
+            .expect("new project should be created");
+        let fetched = repo
+            .find_by_name(&project.name(), &mut tx)
+            .await
+            .expect("inserted project should be found");
+
+        if let Some(fetched) = fetched {
+            assert_eq!(fetched.id(), project.id());
+            assert_eq!(fetched.name(), project.name());
+            assert_eq!(fetched.description(), project.description());
+            assert!(fetched.config().is_some());
+            assert!(fetched.created_at().is_some());
+            assert!(fetched.updated_at().is_some());
+        } else {
+            panic!("inserted project should be found");
+        }
+
+        tx.rollback()
+            .await
+            .expect("rollback should be done properly");
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_create_and_list_with_default_limit(pool: PgPool) -> Result<()> {
         let repo = PgProjectRepository;
         let mut tx = pool
@@ -293,7 +381,7 @@ mod tests {
     }
 
     #[sqlx::test]
-    #[ignore] // Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_create_and_list_with_specified_limit(pool: PgPool) -> Result<()> {
         let repo = PgProjectRepository;
         let mut tx = pool
