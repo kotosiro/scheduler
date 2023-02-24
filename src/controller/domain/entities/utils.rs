@@ -1,4 +1,19 @@
 #[macro_export]
+macro_rules! impl_bool_property {
+    ( $type:tt ) => {
+        impl $type {
+            pub fn new(value: bool) -> $type {
+                $type { value }
+            }
+
+            pub fn to_bool(&self) -> bool {
+                self.value
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! impl_string_property {
     ( $type:tt ) => {
         impl $type {
@@ -19,6 +34,84 @@ macro_rules! impl_string_property {
 
             pub fn into_string(self) -> String {
                 self.value
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_uuid_property {
+    ( $type:tt ) => {
+        impl $type {
+            pub fn new(value: uuid::Uuid) -> $type {
+                $type { value }
+            }
+
+            pub fn to_uuid(&self) -> uuid::Uuid {
+                self.value
+            }
+        }
+
+        impl std::fmt::Display for $type {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.value.hyphenated())
+            }
+        }
+
+        impl TryFrom<&str> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
+                let value = uuid::Uuid::parse_str(value)?;
+                Ok($type { value })
+            }
+        }
+
+        impl TryFrom<String> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+                let value = uuid::Uuid::parse_str(value.as_str())?;
+                Ok($type { value })
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_json_property {
+    ( $type:tt ) => {
+        impl $type {
+            pub fn new(value: serde_json::Value) -> anyhow::Result<$type> {
+                Ok($type { value })
+            }
+
+            pub fn to_json(&self) -> serde_json::Value {
+                self.value.clone()
+            }
+        }
+
+        impl std::fmt::Display for $type {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.value.to_string())
+            }
+        }
+
+        impl TryFrom<&str> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
+                let value = serde_json::from_str(value)?;
+                Ok($type { value })
+            }
+        }
+
+        impl TryFrom<String> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+                let value = serde_json::from_str(value.as_str())?;
+                Ok($type { value })
             }
         }
     };

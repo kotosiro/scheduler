@@ -1,5 +1,5 @@
 use crate::controller::domain::entities::project::Project;
-use crate::controller::domain::entities::project::ProjectDestructure;
+use crate::controller::domain::entities::project::ProjectDestructor;
 use chrono::NaiveDateTime;
 use serde_json::Value as Json;
 use uuid::Uuid;
@@ -16,7 +16,7 @@ pub struct ProjectDto {
 
 impl From<Project> for ProjectDto {
     fn from(project: Project) -> Self {
-        let ProjectDestructure {
+        let ProjectDestructor {
             id,
             name,
             description,
@@ -46,11 +46,12 @@ mod tests {
 
     #[test]
     fn test_from() {
-        let id = ProjectId::new(Uuid::new_v4()).expect("cannot parse project id properly");
-        let name =
-            ProjectName::new(testutils::rand::string(10)).expect("failed to parse project name");
+        let id = ProjectId::try_from(testutils::rand::uuid())
+            .expect("project id should be parsed properly");
+        let name = ProjectName::new(testutils::rand::string(10))
+            .expect("project name should be parsed properly");
         let description = ProjectDescription::new(testutils::rand::string(10))
-            .expect("failed to parse project description");
+            .expect("project description should be parsed properly");
         let config = ProjectConfig::try_from(format!(
             r#"
                 {{
@@ -74,7 +75,7 @@ mod tests {
             Some(created_at.clone()),
             Some(updated_at.clone()),
         )
-        .expect("failed to create project");
+        .expect("project should be created properly");
         let dto = ProjectDto::from(project);
         assert_eq!(dto.id, id.to_uuid());
         assert_eq!(dto.name, name.into_string());

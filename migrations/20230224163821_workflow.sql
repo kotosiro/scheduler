@@ -5,5 +5,7 @@ CREATE TABLE IF NOT EXISTS workflow (
     project_id UUID NOT NULL REFERENCES project(id),
     description VARCHAR,
     paused BOOLEAN,
+    created_at TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
     UNIQUE(project_id, name) INCLUDE (id)
 );

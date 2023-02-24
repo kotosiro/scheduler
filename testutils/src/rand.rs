@@ -54,6 +54,6 @@ pub fn url() -> String {
     format!("{}://{}:{}", string(5), string(10), port())
 }
 
-pub fn uuid() -> Uuid {
-    Uuid::new_v4()
+pub fn uuid() -> String {
+    Uuid::new_v4().to_string()
 }

@@ -1,5 +1,6 @@
+use crate::impl_json_property;
 use crate::impl_string_property;
-use anyhow::Context;
+use crate::impl_uuid_property;
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use getset::Getters;
@@ -13,41 +14,7 @@ pub struct ProjectId {
     value: Uuid,
 }
 
-impl ProjectId {
-    pub fn new(value: Uuid) -> Result<ProjectId> {
-        Ok(ProjectId { value })
-    }
-
-    pub fn to_uuid(&self) -> Uuid {
-        self.value
-    }
-}
-
-impl std::fmt::Display for ProjectId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value.hyphenated())
-    }
-}
-
-impl TryFrom<&str> for ProjectId {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
-        let value =
-            Uuid::parse_str(value).context(format!(r#"failed to parse id "{}" as uuid"#, value))?;
-        Ok(ProjectId { value })
-    }
-}
-
-impl TryFrom<String> for ProjectId {
-    type Error = anyhow::Error;
-
-    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
-        let value = Uuid::parse_str(value.as_str())
-            .context(format!(r#"failed to parse id "{}" as uuid"#, value))?;
-        Ok(ProjectId { value })
-    }
-}
+impl_uuid_property!(ProjectId);
 
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
 pub struct ProjectName {
@@ -59,7 +26,7 @@ impl_string_property!(ProjectName);
 
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
 pub struct ProjectDescription {
-    #[validate(length(min = 1))]
+    #[validate(length(min = 0))]
     value: String,
 }
 
@@ -70,41 +37,7 @@ pub struct ProjectConfig {
     value: Json,
 }
 
-impl ProjectConfig {
-    pub fn new(value: Json) -> Result<ProjectConfig> {
-        Ok(ProjectConfig { value })
-    }
-
-    pub fn to_json(&self) -> Json {
-        self.value.clone()
-    }
-}
-
-impl std::fmt::Display for ProjectConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value.to_string())
-    }
-}
-
-impl TryFrom<&str> for ProjectConfig {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
-        let value = serde_json::from_str(value)
-            .context(format!(r#"failed to parse config "{}" as json"#, value))?;
-        Ok(ProjectConfig { value })
-    }
-}
-
-impl TryFrom<String> for ProjectConfig {
-    type Error = anyhow::Error;
-
-    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
-        let value = serde_json::from_str(value.as_str())
-            .context(format!(r#"failed to parse config "{}" as json"#, value))?;
-        Ok(ProjectConfig { value })
-    }
-}
+impl_json_property!(ProjectConfig);
 
 #[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
 pub struct Project {
@@ -123,7 +56,7 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProjectDestructure {
+pub struct ProjectDestructor {
     pub id: ProjectId,
     pub name: ProjectName,
     pub description: ProjectDescription,
@@ -151,8 +84,8 @@ impl Project {
         })
     }
 
-    pub fn destruct(mut self) -> ProjectDestructure {
-        ProjectDestructure {
+    pub fn destruct(mut self) -> ProjectDestructor {
+        ProjectDestructor {
             id: self.id,
             name: self.name,
             description: self.description,
@@ -166,18 +99,17 @@ impl Project {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::Uuid;
 
     #[test]
-    fn test_valid_uuid() {
+    fn test_valid_project_id() {
         assert!(matches!(
-            ProjectId::try_from(Uuid::new_v4().to_string()),
+            ProjectId::try_from(testutils::rand::uuid()),
             Ok(_)
         ));
     }
 
     #[test]
-    fn test_invalid_uuid() {
+    fn test_invalid_project_id() {
         assert!(matches!(
             ProjectId::try_from(testutils::rand::string(255)),
             Err(_)
@@ -203,11 +135,7 @@ mod tests {
             ProjectDescription::new(testutils::rand::string(255)),
             Ok(_)
         ));
-    }
-
-    #[test]
-    fn test_invalid_project_description() {
-        assert!(matches!(ProjectDescription::new(""), Err(_)));
+        assert!(matches!(ProjectDescription::new(""), Ok(_)));
     }
 
     #[test]

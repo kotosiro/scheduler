@@ -136,7 +136,7 @@ impl ProjectRepository for PgProjectRepository {
         let projects = rows
             .into_iter()
             .flat_map(|mut row| {
-                let id = ProjectId::new(row.id)?;
+                let id = ProjectId::new(row.id);
                 let name = ProjectName::new(row.name)?;
                 let description = ProjectDescription::new(row.description)?;
                 let config = match row.config.take() {
@@ -180,7 +180,7 @@ impl ProjectRepository for PgProjectRepository {
         ))?;
         let project = row
             .map(|mut row| {
-                let id = ProjectId::new(row.id)?;
+                let id = ProjectId::new(row.id);
                 let name = ProjectName::new(row.name)?;
                 let description = ProjectDescription::new(row.description)?;
                 let config = match row.config.take() {
@@ -224,7 +224,7 @@ impl ProjectRepository for PgProjectRepository {
         ))?;
         let project = row
             .map(|mut row| {
-                let id = ProjectId::new(row.id)?;
+                let id = ProjectId::new(row.id);
                 let name = ProjectName::new(row.name)?;
                 let description = ProjectDescription::new(row.description)?;
                 let config = match row.config.take() {
@@ -256,7 +256,8 @@ mod tests {
 
     async fn create_project(tx: &mut PgConnection) -> Result<Project> {
         let repo = PgProjectRepository;
-        let id = ProjectId::new(Uuid::new_v4()).context("cannot parse project id properly")?;
+        let id =
+            ProjectId::try_from(testutils::rand::uuid()).context("failed to parse project id")?;
         let name = ProjectName::new(testutils::rand::string(10))
             .context("failed to parse project name")?;
         let description = ProjectDescription::new(testutils::rand::string(10))
