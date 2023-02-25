@@ -62,10 +62,14 @@ mod tests {
             "postgres://postgres:secret@127.0.0.1:{}",
             node.get_host_port_ipv4(5432)
         );
-        let expected: HashSet<_> = [String::from("project"), String::from("workflow")]
-            .iter()
-            .cloned()
-            .collect();
+        let expected: HashSet<_> = [
+            String::from("project"),
+            String::from("workflow"),
+            String::from("job"),
+        ]
+        .iter()
+        .cloned()
+        .collect();
         let pool = connect(&url)
             .await
             .expect("connection should be established");

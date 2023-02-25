@@ -2,11 +2,28 @@
 macro_rules! impl_bool_property {
     ( $type:tt ) => {
         impl $type {
-            pub fn new(value: bool) -> $type {
-                $type { value }
+            pub fn new(value: bool) -> Self {
+                Self { value }
             }
 
             pub fn to_bool(&self) -> bool {
+                self.value
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_i32_property {
+    ( $type:tt ) => {
+        impl $type {
+            pub fn new(value: i32) -> anyhow::Result<Self> {
+                let object = Self { value };
+                object.validate()?;
+                Ok(object)
+            }
+
+            pub fn to_i32(&self) -> i32 {
                 self.value
             }
         }
@@ -43,8 +60,8 @@ macro_rules! impl_string_property {
 macro_rules! impl_uuid_property {
     ( $type:tt ) => {
         impl $type {
-            pub fn new(value: uuid::Uuid) -> $type {
-                $type { value }
+            pub fn new(value: uuid::Uuid) -> Self {
+                Self { value }
             }
 
             pub fn to_uuid(&self) -> uuid::Uuid {
@@ -63,7 +80,7 @@ macro_rules! impl_uuid_property {
 
             fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
                 let value = uuid::Uuid::parse_str(value)?;
-                Ok($type { value })
+                Ok(Self { value })
             }
         }
 
@@ -72,7 +89,7 @@ macro_rules! impl_uuid_property {
 
             fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
                 let value = uuid::Uuid::parse_str(value.as_str())?;
-                Ok($type { value })
+                Ok(Self { value })
             }
         }
     };
@@ -82,8 +99,8 @@ macro_rules! impl_uuid_property {
 macro_rules! impl_json_property {
     ( $type:tt ) => {
         impl $type {
-            pub fn new(value: serde_json::Value) -> anyhow::Result<$type> {
-                Ok($type { value })
+            pub fn new(value: serde_json::Value) -> anyhow::Result<Self> {
+                Ok(Self { value })
             }
 
             pub fn to_json(&self) -> serde_json::Value {
@@ -102,7 +119,7 @@ macro_rules! impl_json_property {
 
             fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
                 let value = serde_json::from_str(value)?;
-                Ok($type { value })
+                Ok(Self { value })
             }
         }
 
@@ -111,7 +128,7 @@ macro_rules! impl_json_property {
 
             fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
                 let value = serde_json::from_str(value.as_str())?;
-                Ok($type { value })
+                Ok(Self { value })
             }
         }
     };

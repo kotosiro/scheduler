@@ -7,16 +7,13 @@ use std::path::Path;
 
 pub fn new(path: Option<&Path>) -> ConfigBuilder<DefaultState> {
     let mut builder = config::Config::builder();
-
     builder = builder.add_source(File::from_str(
         include_str!("defaults.toml"),
         FileFormat::Toml,
     ));
-
     if let Some(path) = path {
         builder = builder.add_source(File::from(path));
     }
-
     builder.add_source(
         Environment::with_prefix("KOTOSIRO")
             //.list_separator(",")
