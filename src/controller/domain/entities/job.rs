@@ -78,19 +78,6 @@ pub struct Job {
     updated_at: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct JobDestructor {
-    pub id: JobId,
-    pub name: JobName,
-    pub workflow_id: WorkflowId,
-    pub threshold: JobThreshold,
-    pub image: JobImage,
-    pub args: Vec<JobArg>,
-    pub envs: Vec<JobEnv>,
-    pub created_at: Option<NaiveDateTime>,
-    pub updated_at: Option<NaiveDateTime>,
-}
-
 impl Job {
     pub fn new(
         id: JobId,
@@ -114,20 +101,6 @@ impl Job {
             created_at,
             updated_at,
         })
-    }
-
-    pub fn destruct(mut self) -> JobDestructor {
-        JobDestructor {
-            id: self.id,
-            name: self.name,
-            workflow_id: self.workflow_id,
-            threshold: self.threshold,
-            image: self.image,
-            args: self.args,
-            envs: self.envs,
-            created_at: self.created_at.take(),
-            updated_at: self.updated_at.take(),
-        }
     }
 }
 

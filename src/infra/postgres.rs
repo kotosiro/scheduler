@@ -66,6 +66,8 @@ mod tests {
             String::from("project"),
             String::from("workflow"),
             String::from("job"),
+            String::from("run"),
+            String::from("token"),
         ]
         .iter()
         .cloned()

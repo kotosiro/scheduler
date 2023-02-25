@@ -1,26 +1,12 @@
+use crate::controller::domain::dtos::project::Project as ProjectRow;
 use crate::controller::domain::entities::project::Project;
-use crate::controller::domain::entities::project::ProjectConfig;
-use crate::controller::domain::entities::project::ProjectDescription;
 use crate::controller::domain::entities::project::ProjectId;
 use crate::controller::domain::entities::project::ProjectName;
 use crate::infra::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
-use serde_json::Value as Json;
 use sqlx::postgres::PgQueryResult;
-use uuid::Uuid;
-
-#[derive(sqlx::FromRow)]
-struct ProjectRow {
-    id: Uuid,
-    name: String,
-    description: String,
-    config: Option<Json>,
-    created_at: NaiveDateTime,
-    updated_at: NaiveDateTime,
-}
 
 #[async_trait]
 pub trait ProjectRepository: Send + Sync + 'static {
@@ -40,19 +26,19 @@ pub trait ProjectRepository: Send + Sync + 'static {
         &self,
         limit: Option<i64>,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Vec<Project>>;
+    ) -> Result<Vec<ProjectRow>>;
 
     async fn find_by_id(
         &self,
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Option<Project>>;
+    ) -> Result<Option<ProjectRow>>;
 
     async fn find_by_name(
         &self,
         name: &ProjectName,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Option<Project>>;
+    ) -> Result<Option<ProjectRow>>;
 }
 
 pub struct PgProjectRepository;
@@ -115,7 +101,7 @@ impl ProjectRepository for PgProjectRepository {
         &self,
         limit: Option<i64>,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Vec<Project>> {
+    ) -> Result<Vec<ProjectRow>> {
         let mut conn = executor
             .acquire()
             .await
@@ -133,34 +119,14 @@ impl ProjectRepository for PgProjectRepository {
             "failed to list {} project(s) from [project]",
             limit.unwrap_or(100)
         ))?;
-        let projects = rows
-            .into_iter()
-            .flat_map(|mut row| {
-                let id = ProjectId::new(row.id);
-                let name = ProjectName::new(row.name)?;
-                let description = ProjectDescription::new(row.description)?;
-                let config = match row.config.take() {
-                    Some(json) => ProjectConfig::new(json).ok(),
-                    None => None,
-                };
-                Project::new(
-                    id,
-                    name,
-                    description,
-                    config,
-                    Some(row.created_at),
-                    Some(row.updated_at),
-                )
-            })
-            .collect();
-        Ok(projects)
+        Ok(rows)
     }
 
     async fn find_by_id(
         &self,
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Option<Project>> {
+    ) -> Result<Option<ProjectRow>> {
         let mut conn = executor
             .acquire()
             .await
@@ -178,33 +144,14 @@ impl ProjectRepository for PgProjectRepository {
             r#"failed to select "{}" from [project]"#,
             id.to_uuid()
         ))?;
-        let project = row
-            .map(|mut row| {
-                let id = ProjectId::new(row.id);
-                let name = ProjectName::new(row.name)?;
-                let description = ProjectDescription::new(row.description)?;
-                let config = match row.config.take() {
-                    Some(json) => ProjectConfig::new(json).ok(),
-                    None => None,
-                };
-                Project::new(
-                    id,
-                    name,
-                    description,
-                    config,
-                    Some(row.created_at),
-                    Some(row.updated_at),
-                )
-            })
-            .transpose()?;
-        Ok(project)
+        Ok(row)
     }
 
     async fn find_by_name(
         &self,
         name: &ProjectName,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Option<Project>> {
+    ) -> Result<Option<ProjectRow>> {
         let mut conn = executor
             .acquire()
             .await
@@ -222,32 +169,14 @@ impl ProjectRepository for PgProjectRepository {
             r#"failed to select "{}" from [project]"#,
             name.as_str()
         ))?;
-        let project = row
-            .map(|mut row| {
-                let id = ProjectId::new(row.id);
-                let name = ProjectName::new(row.name)?;
-                let description = ProjectDescription::new(row.description)?;
-                let config = match row.config.take() {
-                    Some(json) => ProjectConfig::new(json).ok(),
-                    None => None,
-                };
-                Project::new(
-                    id,
-                    name,
-                    description,
-                    config,
-                    Some(row.created_at),
-                    Some(row.updated_at),
-                )
-            })
-            .transpose()?;
-        Ok(project)
+        Ok(row)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::controller::domain::entities::project::ProjectDescription;
     use anyhow::Context;
     use anyhow::Result;
     use sqlx::PgConnection;
@@ -286,12 +215,10 @@ mod tests {
             .await
             .expect("inserted project should be found");
         if let Some(fetched) = fetched {
-            assert_eq!(fetched.id(), project.id());
-            assert_eq!(fetched.name(), project.name());
-            assert_eq!(fetched.description(), project.description());
-            assert!(fetched.config().is_some());
-            assert!(fetched.created_at().is_some());
-            assert!(fetched.updated_at().is_some());
+            assert_eq!(fetched.id, project.id().to_uuid());
+            assert_eq!(fetched.name, project.name().as_str());
+            assert_eq!(fetched.description, project.description().as_str());
+            assert!(fetched.config.is_some());
         } else {
             panic!("inserted project should be found");
         }
@@ -317,12 +244,10 @@ mod tests {
             .await
             .expect("inserted project should be found");
         if let Some(fetched) = fetched {
-            assert_eq!(fetched.id(), project.id());
-            assert_eq!(fetched.name(), project.name());
-            assert_eq!(fetched.description(), project.description());
-            assert!(fetched.config().is_some());
-            assert!(fetched.created_at().is_some());
-            assert!(fetched.updated_at().is_some());
+            assert_eq!(fetched.id, project.id().to_uuid());
+            assert_eq!(fetched.name, project.name().as_str());
+            assert_eq!(fetched.description, project.description().as_str());
+            assert!(fetched.config.is_some());
         } else {
             panic!("inserted project should be found");
         }

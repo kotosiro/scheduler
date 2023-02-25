@@ -57,17 +57,6 @@ pub struct Workflow {
     updated_at: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WorkflowDestructor {
-    pub id: WorkflowId,
-    pub name: WorkflowName,
-    pub project_id: ProjectId,
-    pub description: WorkflowDescription,
-    pub paused: WorkflowPaused,
-    pub created_at: Option<NaiveDateTime>,
-    pub updated_at: Option<NaiveDateTime>,
-}
-
 impl Workflow {
     pub fn new(
         id: WorkflowId,
@@ -87,18 +76,6 @@ impl Workflow {
             created_at,
             updated_at,
         })
-    }
-
-    pub fn destruct(mut self) -> WorkflowDestructor {
-        WorkflowDestructor {
-            id: self.id,
-            name: self.name,
-            project_id: self.project_id,
-            description: self.description,
-            paused: self.paused,
-            created_at: self.created_at.take(),
-            updated_at: self.updated_at.take(),
-        }
     }
 }
 

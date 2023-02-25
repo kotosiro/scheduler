@@ -10,6 +10,10 @@ pub fn i32(lower: i32, upper: i32) -> i32 {
     rng.gen_range(lower..upper)
 }
 
+pub fn usize() -> usize {
+    rand::random::<usize>()
+}
+
 pub fn bool() -> bool {
     let mut rng = rand::thread_rng();
     rng.gen_range(0..CHARSET.len()) % 2 == 0
@@ -56,4 +60,8 @@ pub fn url() -> String {
 
 pub fn uuid() -> String {
     Uuid::new_v4().to_string()
+}
+
+pub fn choice<T>(candidates: &Vec<T>) -> &T {
+    &candidates[self::usize() % candidates.len()]
 }

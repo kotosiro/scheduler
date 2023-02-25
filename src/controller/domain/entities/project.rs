@@ -55,16 +55,6 @@ pub struct Project {
     updated_at: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProjectDestructor {
-    pub id: ProjectId,
-    pub name: ProjectName,
-    pub description: ProjectDescription,
-    pub config: Option<ProjectConfig>,
-    pub created_at: Option<NaiveDateTime>,
-    pub updated_at: Option<NaiveDateTime>,
-}
-
 impl Project {
     pub fn new(
         id: ProjectId,
@@ -82,17 +72,6 @@ impl Project {
             created_at,
             updated_at,
         })
-    }
-
-    pub fn destruct(mut self) -> ProjectDestructor {
-        ProjectDestructor {
-            id: self.id,
-            name: self.name,
-            description: self.description,
-            config: self.config.take(),
-            created_at: self.created_at.take(),
-            updated_at: self.updated_at.take(),
-        }
     }
 }
 
