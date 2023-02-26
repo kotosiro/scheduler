@@ -128,8 +128,8 @@ mod tests {
     use super::*;
     use crate::controller::domain::entities::project::Project;
     use crate::controller::domain::entities::project::ProjectId;
-    use crate::controller::domain::repositories::project_repository::PgProjectRepository;
-    use crate::controller::domain::repositories::project_repository::ProjectRepository;
+    use crate::controller::domain::repositories::project::PgProjectRepository;
+    use crate::controller::domain::repositories::project::ProjectRepository;
     use anyhow::Context;
     use anyhow::Result;
     use sqlx::PgConnection;
