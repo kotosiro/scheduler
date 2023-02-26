@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS job (
     image VARCHAR,
     args VARCHAR[],
     envs VARCHAR[],
-    created_at TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL default CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL default CURRENT_TIMESTAMP,
     UNIQUE(workflow_id, name) INCLUDE (id)
 );

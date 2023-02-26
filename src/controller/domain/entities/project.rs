@@ -2,7 +2,6 @@ use crate::impl_json_property;
 use crate::impl_string_property;
 use crate::impl_uuid_property;
 use anyhow::Result;
-use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
 use serde_json::Value as Json;
@@ -49,10 +48,6 @@ pub struct Project {
     description: ProjectDescription,
     #[getset(get = "pub", set = "pub")]
     config: Option<ProjectConfig>,
-    #[getset(get = "pub", set = "pub")]
-    created_at: Option<NaiveDateTime>,
-    #[getset(get = "pub", set = "pub")]
-    updated_at: Option<NaiveDateTime>,
 }
 
 impl Project {
@@ -67,8 +62,6 @@ impl Project {
             name: ProjectName::new(name)?,
             description: ProjectDescription::new(description)?,
             config: config.map(|json| ProjectConfig::new(json)),
-            created_at: None,
-            updated_at: None,
         })
     }
 }

@@ -1,4 +1,5 @@
-use chrono::NaiveDateTime;
+use chrono::DateTime;
+use chrono::Utc;
 use serde_json::Value as Json;
 use uuid::Uuid;
 
@@ -8,6 +9,6 @@ pub struct Project {
     pub name: String,
     pub description: String,
     pub config: Option<Json>,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

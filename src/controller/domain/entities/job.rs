@@ -3,7 +3,6 @@ use crate::impl_i32_property;
 use crate::impl_string_property;
 use crate::impl_uuid_property;
 use anyhow::Result;
-use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
 use uuid::Uuid;
@@ -72,10 +71,6 @@ pub struct Job {
     args: Vec<JobArg>,
     #[getset(get = "pub", set = "pub")]
     envs: Vec<JobEnv>,
-    #[getset(get = "pub", set = "pub")]
-    created_at: Option<NaiveDateTime>,
-    #[getset(get = "pub", set = "pub")]
-    updated_at: Option<NaiveDateTime>,
 }
 
 impl Job {
@@ -96,8 +91,6 @@ impl Job {
             image: JobImage::new(image)?,
             args: args.into_iter().map(|a| JobArg::new(a)).flatten().collect(),
             envs: envs.into_iter().map(|e| JobEnv::new(e)).flatten().collect(),
-            created_at: None,
-            updated_at: None,
         })
     }
 }

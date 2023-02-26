@@ -3,7 +3,6 @@ use crate::impl_bool_property;
 use crate::impl_string_property;
 use crate::impl_uuid_property;
 use anyhow::Result;
-use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
 use uuid::Uuid;
@@ -51,10 +50,6 @@ pub struct Workflow {
     description: WorkflowDescription,
     #[getset(get = "pub", set = "pub")]
     paused: WorkflowPaused,
-    #[getset(get = "pub", set = "pub")]
-    created_at: Option<NaiveDateTime>,
-    #[getset(get = "pub", set = "pub")]
-    updated_at: Option<NaiveDateTime>,
 }
 
 impl Workflow {
@@ -71,8 +66,6 @@ impl Workflow {
             project_id: ProjectId::try_from(project_id)?,
             description: WorkflowDescription::new(description)?,
             paused: WorkflowPaused::new(paused),
-            created_at: None,
-            updated_at: None,
         })
     }
 }

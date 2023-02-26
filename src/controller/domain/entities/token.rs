@@ -1,7 +1,6 @@
 use super::job::JobId;
 use crate::impl_i32_property;
 use anyhow::Result;
-use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
 use validator::Validate;
@@ -73,10 +72,6 @@ pub struct Token {
     count: TokenCount,
     #[getset(get = "pub", set = "pub")]
     state: TokenState,
-    #[getset(get = "pub", set = "pub")]
-    created_at: Option<NaiveDateTime>,
-    #[getset(get = "pub", set = "pub")]
-    updated_at: Option<NaiveDateTime>,
 }
 
 impl Token {
@@ -85,8 +80,6 @@ impl Token {
             job_id: JobId::try_from(job_id)?,
             count: TokenCount::new(count)?,
             state: state,
-            created_at: None,
-            updated_at: None,
         })
     }
 }
