@@ -80,26 +80,24 @@ pub struct Job {
 
 impl Job {
     pub fn new(
-        id: JobId,
-        name: JobName,
-        workflow_id: WorkflowId,
-        threshold: JobThreshold,
-        image: JobImage,
-        args: Vec<JobArg>,
-        envs: Vec<JobEnv>,
-        created_at: Option<NaiveDateTime>,
-        updated_at: Option<NaiveDateTime>,
+        id: String,
+        name: String,
+        workflow_id: String,
+        threshold: i32,
+        image: String,
+        args: Vec<String>,
+        envs: Vec<String>,
     ) -> Result<Self> {
         Ok(Self {
-            id,
-            name,
-            workflow_id,
-            threshold,
-            image,
-            args,
-            envs,
-            created_at,
-            updated_at,
+            id: JobId::try_from(id)?,
+            name: JobName::new(name)?,
+            workflow_id: WorkflowId::try_from(workflow_id)?,
+            threshold: JobThreshold::new(threshold)?,
+            image: JobImage::new(image)?,
+            args: args.into_iter().map(|a| JobArg::new(a)).flatten().collect(),
+            envs: envs.into_iter().map(|e| JobEnv::new(e)).flatten().collect(),
+            created_at: None,
+            updated_at: None,
         })
     }
 }

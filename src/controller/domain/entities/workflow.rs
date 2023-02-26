@@ -59,22 +59,20 @@ pub struct Workflow {
 
 impl Workflow {
     pub fn new(
-        id: WorkflowId,
-        name: WorkflowName,
-        project_id: ProjectId,
-        description: WorkflowDescription,
-        paused: WorkflowPaused,
-        created_at: Option<NaiveDateTime>,
-        updated_at: Option<NaiveDateTime>,
+        id: String,
+        name: String,
+        project_id: String,
+        description: String,
+        paused: bool,
     ) -> Result<Self> {
         Ok(Self {
-            id,
-            name,
-            project_id,
-            description,
-            paused,
-            created_at,
-            updated_at,
+            id: WorkflowId::try_from(id)?,
+            name: WorkflowName::new(name)?,
+            project_id: ProjectId::try_from(project_id)?,
+            description: WorkflowDescription::new(description)?,
+            paused: WorkflowPaused::new(paused),
+            created_at: None,
+            updated_at: None,
         })
     }
 }

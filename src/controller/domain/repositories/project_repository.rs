@@ -176,7 +176,6 @@ impl ProjectRepository for PgProjectRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::controller::domain::entities::project::ProjectDescription;
     use anyhow::Context;
     use anyhow::Result;
     use sqlx::PgConnection;
@@ -185,14 +184,13 @@ mod tests {
 
     async fn create_project(tx: &mut PgConnection) -> Result<Project> {
         let repo = PgProjectRepository;
-        let id =
-            ProjectId::try_from(testutils::rand::uuid()).context("failed to parse project id")?;
-        let name = ProjectName::new(testutils::rand::string(10))
-            .context("failed to parse project name")?;
-        let description = ProjectDescription::new(testutils::rand::string(10))
-            .context("failed to parse project description")?;
-        let project = Project::new(id.clone(), name, description, None, None, None)
-            .context("failed to create project")?;
+        let project = Project::new(
+            testutils::rand::uuid(),
+            testutils::rand::string(10),
+            testutils::rand::string(10),
+            None,
+        )
+        .context("failed to create project")?;
         repo.create(&project, tx)
             .await
             .context("failed to insert project")?;

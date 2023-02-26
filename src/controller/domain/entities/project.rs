@@ -57,20 +57,18 @@ pub struct Project {
 
 impl Project {
     pub fn new(
-        id: ProjectId,
-        name: ProjectName,
-        description: ProjectDescription,
-        config: Option<ProjectConfig>,
-        created_at: Option<NaiveDateTime>,
-        updated_at: Option<NaiveDateTime>,
+        id: String,
+        name: String,
+        description: String,
+        config: Option<Json>,
     ) -> Result<Self> {
         Ok(Self {
-            id,
-            name,
-            description,
-            config,
-            created_at,
-            updated_at,
+            id: ProjectId::try_from(id)?,
+            name: ProjectName::new(name)?,
+            description: ProjectDescription::new(description)?,
+            config: config.map(|json| ProjectConfig::new(json)),
+            created_at: None,
+            updated_at: None,
         })
     }
 }

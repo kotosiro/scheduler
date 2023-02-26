@@ -1,5 +1,6 @@
 use super::job::JobId;
 use crate::impl_i32_property;
+use anyhow::Result;
 use chrono::NaiveDateTime;
 use getset::Getters;
 use getset::Setters;
@@ -43,7 +44,7 @@ pub enum TokenState {
 }
 
 impl TokenState {
-    pub fn is_final(&self) -> bool {
+    pub fn is_done(&self) -> bool {
         matches!(
             self,
             TokenState::Success | TokenState::Failure | TokenState::Error
@@ -76,6 +77,18 @@ pub struct Token {
     created_at: Option<NaiveDateTime>,
     #[getset(get = "pub", set = "pub")]
     updated_at: Option<NaiveDateTime>,
+}
+
+impl Token {
+    pub fn new(job_id: String, count: i32, state: TokenState) -> Result<Self> {
+        Ok(Self {
+            job_id: JobId::try_from(job_id)?,
+            count: TokenCount::new(count)?,
+            state: state,
+            created_at: None,
+            updated_at: None,
+        })
+    }
 }
 
 #[cfg(test)]

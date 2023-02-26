@@ -99,8 +99,8 @@ macro_rules! impl_uuid_property {
 macro_rules! impl_json_property {
     ( $type:tt ) => {
         impl $type {
-            pub fn new(value: serde_json::Value) -> anyhow::Result<Self> {
-                Ok(Self { value })
+            pub fn new(value: serde_json::Value) -> Self {
+                Self { value }
             }
 
             pub fn to_json(&self) -> serde_json::Value {
