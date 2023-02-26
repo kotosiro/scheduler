@@ -28,9 +28,13 @@ impl_uuid_property!(RunId);
 #[sqlx(rename_all = "lowercase")]
 #[sqlx(type_name = "VARCHAR")]
 pub enum RunPriority {
+    #[strum(ascii_case_insensitive)]
     BackFill = 0,
+    #[strum(ascii_case_insensitive)]
     Low = 1,
+    #[strum(ascii_case_insensitive)]
     Normal = 2,
+    #[strum(ascii_case_insensitive)]
     High = 3,
 }
 
@@ -99,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_valid_run_priority() {
-        let candidates = vec!["Backfill", "Low", "Normal", "High"];
+        let candidates = vec!["BackFill", "Low", "Normal", "High"];
         let priority = testutils::rand::choice(&candidates);
         assert!(matches!(RunPriority::from_str(priority), Ok(_)));
     }

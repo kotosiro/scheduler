@@ -1,4 +1,5 @@
 use crate::controller::domain::dtos::project::Project as ProjectRow;
+use crate::controller::domain::dtos::project::ProjectSummary as ProjectSummaryRow;
 use crate::controller::domain::entities::project::Project;
 use crate::controller::domain::entities::project::ProjectId;
 use crate::controller::domain::entities::project::ProjectName;
@@ -39,6 +40,12 @@ pub trait ProjectRepository: Send + Sync + 'static {
         name: &ProjectName,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Option<ProjectRow>>;
+
+    async fn get_summary_by_id(
+        &self,
+        id: &ProjectId,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Option<ProjectSummaryRow>>;
 }
 
 pub struct PgProjectRepository;
@@ -55,8 +62,12 @@ impl ProjectRepository for PgProjectRepository {
             .await
             .context("failed to acquire postgres connection")?;
         sqlx::query(
-            "INSERT INTO project(id, name, description, config)
-             VALUES($1, $2, $3, $4)
+            "INSERT INTO project (
+                 id,
+                 name,
+                 description,
+                 config
+             ) VALUES ($1, $2, $3, $4)
              ON CONFLICT(id)
              DO UPDATE
              SET name = $2,
@@ -107,7 +118,13 @@ impl ProjectRepository for PgProjectRepository {
             .await
             .context("failed to acquire postgres connection")?;
         let rows: Vec<ProjectRow> = sqlx::query_as::<_, ProjectRow>(
-            "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
+            "SELECT
+                 id,
+                 name,
+                 description,
+                 COALESCE(config, '{}'::jsonb) AS config,
+                 created_at,
+                 updated_at
              FROM project
              ORDER BY name
              LIMIT $1",
@@ -131,9 +148,14 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-        let row: Option<ProjectRow> =
-        sqlx::query_as::<_, ProjectRow>(
-            "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
+        let row: Option<ProjectRow> = sqlx::query_as::<_, ProjectRow>(
+            "SELECT
+                 id,
+                 name,
+                 description,
+                 COALESCE(config, '{}'::jsonb) AS config,
+                 created_at,
+                 updated_at
              FROM project
              WHERE id = $1",
         )
@@ -156,9 +178,14 @@ impl ProjectRepository for PgProjectRepository {
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-        let row: Option<ProjectRow> =
-        sqlx::query_as::<_, ProjectRow>(
-            "SELECT id, name, description, COALESCE(config, '{}'::jsonb) AS config, created_at, updated_at
+        let row: Option<ProjectRow> = sqlx::query_as::<_, ProjectRow>(
+            "SELECT
+                 id,
+                 name,
+                 description,
+                 COALESCE(config, '{}'::jsonb) AS config,
+                 created_at,
+                 updated_at
              FROM project
              WHERE name = $1",
         )
@@ -168,6 +195,73 @@ impl ProjectRepository for PgProjectRepository {
         .context(format!(
             r#"failed to select "{}" from [project]"#,
             name.as_str()
+        ))?;
+        Ok(row)
+    }
+
+    async fn get_summary_by_id(
+        &self,
+        id: &ProjectId,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Option<ProjectSummaryRow>> {
+        let mut conn = executor
+            .acquire()
+            .await
+            .context("failed to acquire postgres connection")?;
+        let row: Option<ProjectSummaryRow> = sqlx::query_as::<_, ProjectSummaryRow>(
+            "WITH these_jobs AS (
+                 SELECT
+                     job.id AS id,
+                     run.state AS state
+                 FROM workflow
+                 JOIN job ON job.workflow_id = workflow.id
+                 JOIN run ON run.job_id = job.id
+                 WHERE workflow.project_id = $1
+                 AND (finished_at IS NULL OR CURRENT_TIMESTAMP - finished_at < INTERVAL '1 hour')
+             )
+             SELECT
+                 id,
+                 name,
+                 description,
+                 (
+                     SELECT COUUNT(1)
+                     FROM workflow
+                     WHERE workflow.project_id = $1
+                 ) AS workflows,
+                 (
+                     SELECT COUNT(1)
+                     FROM these_jobs
+                     WHERE (these_jobs.state = 'running')
+                 ) AS running_jobs,
+                 (
+                     SELECT COUNT(1)
+                     FROM these_jobs
+                     WHERE (these_jobs.state = 'waiting' OR these_jobs.state = 'active')
+                 ) AS waiting_jobs,
+                 (
+                     SELECT COUNT(1)
+                     FROM these_jobs
+                     WHERE these_jobs.state = 'failure'
+                 ) AS fails_last_hour,
+                 (
+                     SELECT COUNT(1)
+                     FROM these_jobs
+                     WHERE these_jobs.state = 'success'
+                 ) AS successes_last_hour,
+                 (
+                     SELECT COUNT(1)
+                     FROM these_jobs
+                     WHERE these_jobs.state = 'error'
+                 ) AS errors_last_hour
+             FROM project
+             WHERE id = $1",
+        )
+        .bind(id.to_uuid())
+        .fetch_optional(&mut *conn)
+        .await
+        .context(format!(
+            r#"failed to summarize "{}" from [project]"#,
+            id.to_uuid()
         ))?;
         Ok(row)
     }
