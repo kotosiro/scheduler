@@ -120,7 +120,7 @@ mod tests {
             testutils::rand::string(10),
             testutils::rand::string(10),
             testutils::rand::string(10),
-            testutils::rand::i32(-10, 10)
+            testutils::rand::i64(-10, 10)
         );
         assert!(matches!(ProjectConfig::try_from(json), Ok(_)));
     }
@@ -137,7 +137,7 @@ mod tests {
             testutils::rand::string(10),
             testutils::rand::string(10),
             testutils::rand::string(10),
-            testutils::rand::i32(-10, 10)
+            testutils::rand::i64(-10, 10)
         );
         assert!(matches!(ProjectConfig::try_from(json), Err(_)));
     }

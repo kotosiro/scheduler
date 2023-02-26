@@ -224,7 +224,7 @@ impl ProjectRepository for PgProjectRepository {
                  name,
                  description,
                  (
-                     SELECT COUUNT(1)
+                     SELECT COUNT(1)
                      FROM workflow
                      WHERE workflow.project_id = $1
                  ) AS workflows,
@@ -270,8 +270,23 @@ impl ProjectRepository for PgProjectRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::controller::domain::entities::job::Job;
+    use crate::controller::domain::entities::job::JobId;
+    use crate::controller::domain::entities::run::Run;
+    use crate::controller::domain::entities::run::RunId;
+    use crate::controller::domain::entities::run::RunPriority;
+    use crate::controller::domain::entities::token::TokenState;
+    use crate::controller::domain::entities::workflow::Workflow;
+    use crate::controller::domain::entities::workflow::WorkflowId;
+    use crate::controller::domain::repositories::job::JobRepository;
+    use crate::controller::domain::repositories::job::PgJobRepository;
+    use crate::controller::domain::repositories::run::PgRunRepository;
+    use crate::controller::domain::repositories::run::RunRepository;
+    use crate::controller::domain::repositories::workflow::PgWorkflowRepository;
+    use crate::controller::domain::repositories::workflow::WorkflowRepository;
     use anyhow::Context;
     use anyhow::Result;
+    use chrono::Utc;
     use sqlx::PgConnection;
     use sqlx::PgPool;
     use std::cmp::min;
@@ -289,6 +304,83 @@ mod tests {
             .await
             .context("failed to insert project")?;
         Ok(project)
+    }
+
+    async fn create_workflow(project_id: &ProjectId, tx: &mut PgConnection) -> Result<Workflow> {
+        let repo = PgWorkflowRepository;
+        let workflow = Workflow::new(
+            testutils::rand::uuid(),
+            testutils::rand::string(10),
+            project_id.as_uuid().to_string(),
+            testutils::rand::string(10),
+            testutils::rand::bool(),
+        )
+        .context("failed to create workflow")?;
+        repo.create(&workflow, tx)
+            .await
+            .context("failed to insert workflow")?;
+        Ok(workflow)
+    }
+
+    async fn create_job(workflow_id: &WorkflowId, tx: &mut PgConnection) -> Result<Job> {
+        let repo = PgJobRepository;
+        let num_args = testutils::rand::usize(10);
+        let mut args = Vec::new();
+        for _ in 0..num_args {
+            args.push(testutils::rand::string(10));
+        }
+        let num_envs = testutils::rand::usize(10);
+        let mut envs = Vec::new();
+        for _ in 0..num_envs {
+            envs.push(testutils::rand::string(10));
+        }
+        let job = Job::new(
+            testutils::rand::uuid(),
+            testutils::rand::string(10),
+            workflow_id.as_uuid().to_string(),
+            testutils::rand::i64(0, 10),
+            testutils::rand::string(10),
+            args,
+            envs,
+        )
+        .context("failed to create job")?;
+        repo.create(&job, tx)
+            .await
+            .context("failed to insert job")?;
+        Ok(job)
+    }
+
+    async fn create_run(job_id: &JobId, tx: &mut PgConnection) -> Result<Run> {
+        let repo = PgRunRepository;
+        let states = vec![
+            TokenState::Waiting,
+            TokenState::Active,
+            TokenState::Running,
+            TokenState::Success,
+            TokenState::Failure,
+            TokenState::Error,
+        ];
+        let state = testutils::rand::choice(&states);
+        let priorities = vec![
+            RunPriority::BackFill,
+            RunPriority::Low,
+            RunPriority::Normal,
+            RunPriority::High,
+        ];
+        let priority = testutils::rand::choice(&priorities);
+        let now = Utc::now();
+        let run = Run::new(
+            testutils::rand::uuid(),
+            *state,
+            *priority,
+            job_id.as_uuid().to_string(),
+            now,
+        )
+        .context("failed to create run")?;
+        repo.create(&run, tx)
+            .await
+            .context("failed to insert run")?;
+        Ok(run)
     }
 
     #[sqlx::test]
@@ -357,7 +449,7 @@ mod tests {
             .begin()
             .await
             .expect("transaction should be started properly");
-        let records = testutils::rand::i32(0, 200);
+        let records = testutils::rand::i64(0, 200);
         for _ in 0..records {
             create_project(&mut tx)
                 .await
@@ -382,18 +474,66 @@ mod tests {
             .begin()
             .await
             .expect("transaction should be started properly");
-        let records = testutils::rand::i32(0, 200);
+        let records = testutils::rand::i64(0, 200);
         for _ in 0..records {
             create_project(&mut tx)
                 .await
                 .expect("new project should be created");
         }
-        let limit = testutils::rand::i32(0, 200);
+        let limit = testutils::rand::i64(0, 200);
         let fetched = repo
             .list(Some(limit.into()), &mut tx)
             .await
             .expect("inserted project should be listed");
         assert_eq!(min(records, limit) as usize, fetched.len());
+        tx.rollback()
+            .await
+            .expect("rollback should be done properly");
+        Ok(())
+    }
+
+    #[sqlx::test]
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    async fn test_create_and_get_summary(pool: PgPool) -> Result<()> {
+        let repo = PgProjectRepository;
+        let mut tx = pool
+            .begin()
+            .await
+            .expect("transaction should be started properly");
+        let project = create_project(&mut tx)
+            .await
+            .expect("new project should be created");
+        let num_workflows = testutils::rand::usize(10);
+        let num_jobs = testutils::rand::usize(100);
+        for _ in 0..num_workflows {
+            let workflow = create_workflow(&project.id(), &mut tx)
+                .await
+                .expect("new workflow should be created");
+            for _ in 0..num_jobs {
+                let job = create_job(&workflow.id(), &mut tx)
+                    .await
+                    .expect("new job should be created");
+                let _ = create_run(&job.id(), &mut tx)
+                    .await
+                    .expect("new run should be created");
+            }
+        }
+        let fetched = repo
+            .get_summary_by_id(&project.id(), &mut tx)
+            .await
+            .expect("inserted project should be found");
+        if let Some(fetched) = fetched {
+            assert_eq!(
+                (&num_workflows * &num_jobs) as i64,
+                &fetched.running_jobs
+                    + &fetched.waiting_jobs
+                    + &fetched.fails_last_hour
+                    + &fetched.successes_last_hour
+                    + &fetched.errors_last_hour
+            );
+        } else {
+            panic!("inserted job should be found");
+        }
         tx.rollback()
             .await
             .expect("rollback should be done properly");

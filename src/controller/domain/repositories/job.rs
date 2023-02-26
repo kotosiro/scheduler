@@ -61,7 +61,7 @@ impl JobRepository for PgJobRepository {
         .bind(job.id().as_uuid())
         .bind(job.name().as_str())
         .bind(job.workflow_id().as_uuid())
-        .bind(job.threshold().as_i32())
+        .bind(job.threshold().as_i64())
         .bind(job.image().as_str())
         .bind(
             job.args()
@@ -196,7 +196,7 @@ mod tests {
             testutils::rand::uuid(),
             testutils::rand::string(10),
             workflow_id.as_uuid().to_string(),
-            testutils::rand::i32(0, 10),
+            testutils::rand::i64(0, 10),
             testutils::rand::string(10),
             args,
             envs,
@@ -233,7 +233,7 @@ mod tests {
             assert_eq!(&fetched.id, job.id().as_uuid());
             assert_eq!(&fetched.name, job.name().as_str());
             assert_eq!(&fetched.workflow_id, job.workflow_id().as_uuid());
-            assert_eq!(&fetched.threshold, job.threshold().as_i32());
+            assert_eq!(&fetched.threshold, job.threshold().as_i64());
             assert_eq!(&fetched.image, job.image().as_str());
             assert_eq!(
                 fetched.args,

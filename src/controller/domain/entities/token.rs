@@ -1,5 +1,5 @@
 use super::job::JobId;
-use crate::impl_i32_property;
+use crate::impl_i64_property;
 use anyhow::Result;
 use getset::Getters;
 use getset::Setters;
@@ -8,10 +8,10 @@ use validator::Validate;
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
 pub struct TokenCount {
     #[validate(range(min = 0))]
-    value: i32,
+    value: i64,
 }
 
-impl_i32_property!(TokenCount);
+impl_i64_property!(TokenCount);
 
 #[derive(
     Debug,
@@ -75,7 +75,7 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(job_id: String, count: i32, state: TokenState) -> Result<Self> {
+    pub fn new(job_id: String, count: i64, state: TokenState) -> Result<Self> {
         Ok(Self {
             job_id: JobId::try_from(job_id)?,
             count: TokenCount::new(count)?,
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn test_valid_token_count() {
         assert!(matches!(
-            TokenCount::new(testutils::rand::i32(0, 100)),
+            TokenCount::new(testutils::rand::i64(0, 100)),
             Ok(_)
         ));
     }
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_invalid_token_count() {
         assert!(matches!(
-            TokenCount::new(testutils::rand::i32(-1000, -1)),
+            TokenCount::new(testutils::rand::i64(-1000, -1)),
             Err(_)
         ));
     }

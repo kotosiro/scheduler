@@ -185,7 +185,7 @@ mod tests {
             testutils::rand::uuid(),
             testutils::rand::string(10),
             workflow_id.as_uuid().to_string(),
-            testutils::rand::i32(0, 10),
+            testutils::rand::i64(0, 10),
             testutils::rand::string(10),
             args,
             envs,
@@ -255,7 +255,6 @@ mod tests {
             .await
             .expect("inserted run should be found");
         if let Some(fetched) = fetched {
-            println!("{:?}", fetched);
             assert_eq!(&fetched.id, run.id().as_uuid());
             assert_eq!(&fetched.state, run.state().as_str());
             assert_eq!(&fetched.priority, run.priority().as_str());
