@@ -10,8 +10,8 @@ pub fn i32(lower: i32, upper: i32) -> i32 {
     rng.gen_range(lower..upper)
 }
 
-pub fn usize() -> usize {
-    rand::random::<usize>()
+pub fn usize(upper: usize) -> usize {
+    rand::random::<usize>() % upper
 }
 
 pub fn bool() -> bool {
@@ -63,5 +63,5 @@ pub fn uuid() -> String {
 }
 
 pub fn choice<T>(candidates: &Vec<T>) -> &T {
-    &candidates[self::usize() % candidates.len()]
+    &candidates[self::usize(candidates.len())]
 }
