@@ -51,8 +51,8 @@ impl TokenState {
     }
 }
 
-impl AsRef<str> for TokenState {
-    fn as_ref(&self) -> &str {
+impl TokenState {
+    pub fn as_str(&self) -> &'static str {
         match self {
             TokenState::Waiting => "waiting",
             TokenState::Active => "active",

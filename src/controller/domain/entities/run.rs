@@ -2,6 +2,8 @@ use super::job::JobId;
 use super::token::TokenState;
 use crate::impl_uuid_property;
 use anyhow::Result;
+use chrono::DateTime;
+use chrono::Utc;
 use getset::Getters;
 use getset::Setters;
 use uuid::Uuid;
@@ -65,6 +67,8 @@ pub struct Run {
     priority: RunPriority,
     #[getset(get = "pub", set = "pub")]
     job_id: JobId,
+    #[getset(get = "pub", set = "pub")]
+    triggered_at: DateTime<Utc>,
 }
 
 impl Run {
@@ -73,12 +77,14 @@ impl Run {
         state: TokenState,
         priority: RunPriority,
         job_id: String,
+        triggered_at: DateTime<Utc>,
     ) -> Result<Self> {
         Ok(Self {
             id: RunId::try_from(id)?,
             state: state,
             priority: priority,
             job_id: JobId::try_from(job_id)?,
+            triggered_at: triggered_at,
         })
     }
 }
