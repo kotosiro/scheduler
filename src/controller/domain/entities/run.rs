@@ -40,8 +40,8 @@ pub enum RunPriority {
     High = 3,
 }
 
-impl RunPriority {
-    pub fn as_str(&self) -> &'static str {
+impl AsRef<str> for RunPriority {
+    fn as_ref(&self) -> &str {
         match self {
             RunPriority::BackFill => "backfill",
             RunPriority::Low => "low",

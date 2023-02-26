@@ -1,5 +1,6 @@
 use anyhow::Result;
 use kotosiro::config::Config;
+use kotosiro::logging;
 use tracing::debug;
 
 #[tokio::main]
@@ -25,7 +26,7 @@ async fn main() -> Result<()> {
     let args = app.get_matches();
     let conf = args.get_one::<String>("config").map(AsRef::as_ref);
     let conf = Config::load(conf)?;
-    kotosiro::tracing::setup(&conf);
+    logging::setup(&conf);
     debug!(
         db_url = &conf.db_url,
         controller_addr = &conf.controller_addr,

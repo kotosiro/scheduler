@@ -21,7 +21,7 @@ pub trait RunRepository: Send + Sync + 'static {
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<PgQueryResult>;
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &RunId,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -84,7 +84,7 @@ impl RunRepository for PgRunRepository {
         .context(format!(r#"failed to delete "{}" from [run]"#, id.as_uuid()))
     }
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &RunId,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -232,7 +232,7 @@ mod tests {
 
     #[sqlx::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
-    async fn test_create_and_find_by_id(pool: PgPool) -> Result<()> {
+    async fn test_create_and_get_by_id(pool: PgPool) -> Result<()> {
         let repo = PgRunRepository;
         let mut tx = pool
             .begin()
@@ -251,13 +251,13 @@ mod tests {
             .await
             .expect("new run should be created");
         let fetched = repo
-            .find_by_id(&run.id(), &mut tx)
+            .get_by_id(&run.id(), &mut tx)
             .await
             .expect("inserted run should be found");
         if let Some(fetched) = fetched {
             assert_eq!(&fetched.id, run.id().as_uuid());
-            assert_eq!(&fetched.state, run.state().as_str());
-            assert_eq!(&fetched.priority, run.priority().as_str());
+            assert_eq!(&fetched.state, run.state().as_ref());
+            assert_eq!(&fetched.priority, run.priority().as_ref());
             assert!(&fetched.started_at.is_none());
             assert!(&fetched.finished_at.is_none());
         } else {

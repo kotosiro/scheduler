@@ -2,6 +2,6 @@
 pub mod config;
 pub mod controller;
 mod infra;
-pub mod tracing;
+pub mod logging;
 
 pub const VERSION: &str = git_version::git_version!();

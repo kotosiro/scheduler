@@ -21,7 +21,7 @@ pub trait WorkflowRepository: Send + Sync + 'static {
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<PgQueryResult>;
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &WorkflowId,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -91,7 +91,7 @@ impl WorkflowRepository for PgWorkflowRepository {
         ))
     }
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &WorkflowId,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -168,7 +168,7 @@ mod tests {
 
     #[sqlx::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
-    async fn test_create_and_find_by_id(pool: PgPool) -> Result<()> {
+    async fn test_create_and_get_by_id(pool: PgPool) -> Result<()> {
         let repo = PgWorkflowRepository;
         let mut tx = pool
             .begin()
@@ -181,7 +181,7 @@ mod tests {
             .await
             .expect("new workflow should be created");
         let fetched = repo
-            .find_by_id(&workflow.id(), &mut tx)
+            .get_by_id(&workflow.id(), &mut tx)
             .await
             .expect("inserted workflow should be found");
         if let Some(fetched) = fetched {

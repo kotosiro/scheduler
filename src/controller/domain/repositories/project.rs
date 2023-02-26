@@ -29,13 +29,13 @@ pub trait ProjectRepository: Send + Sync + 'static {
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Vec<ProjectRow>>;
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Option<ProjectRow>>;
 
-    async fn find_by_name(
+    async fn get_by_name(
         &self,
         name: &ProjectName,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -139,7 +139,7 @@ impl ProjectRepository for PgProjectRepository {
         Ok(rows)
     }
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &ProjectId,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -169,7 +169,7 @@ impl ProjectRepository for PgProjectRepository {
         Ok(row)
     }
 
-    async fn find_by_name(
+    async fn get_by_name(
         &self,
         name: &ProjectName,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -273,7 +273,6 @@ mod tests {
     use crate::controller::domain::entities::job::Job;
     use crate::controller::domain::entities::job::JobId;
     use crate::controller::domain::entities::run::Run;
-    use crate::controller::domain::entities::run::RunId;
     use crate::controller::domain::entities::run::RunPriority;
     use crate::controller::domain::entities::token::TokenState;
     use crate::controller::domain::entities::workflow::Workflow;
@@ -385,7 +384,7 @@ mod tests {
 
     #[sqlx::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
-    async fn test_create_and_find_by_id(pool: PgPool) -> Result<()> {
+    async fn test_create_and_get_by_id(pool: PgPool) -> Result<()> {
         let repo = PgProjectRepository;
         let mut tx = pool
             .begin()
@@ -395,7 +394,7 @@ mod tests {
             .await
             .expect("new project should be created");
         let fetched = repo
-            .find_by_id(&project.id(), &mut tx)
+            .get_by_id(&project.id(), &mut tx)
             .await
             .expect("inserted project should be found");
         if let Some(fetched) = fetched {
@@ -414,7 +413,7 @@ mod tests {
 
     #[sqlx::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
-    async fn test_create_and_find_by_name(pool: PgPool) -> Result<()> {
+    async fn test_create_and_get_by_name(pool: PgPool) -> Result<()> {
         let repo = PgProjectRepository;
         let mut tx = pool
             .begin()
@@ -424,7 +423,7 @@ mod tests {
             .await
             .expect("new project should be created");
         let fetched = repo
-            .find_by_name(&project.name(), &mut tx)
+            .get_by_name(&project.name(), &mut tx)
             .await
             .expect("inserted project should be found");
         if let Some(fetched) = fetched {

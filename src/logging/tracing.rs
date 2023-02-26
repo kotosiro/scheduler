@@ -1,4 +1,3 @@
-use crate::config::Config;
 use chrono::SecondsFormat;
 use colored::Colorize;
 use std::fmt::Debug;
@@ -94,7 +93,7 @@ impl Visit for LogVisitor {
     }
 }
 
-fn init(use_json: bool, filter: &str) {
+pub fn init(use_json: bool, filter: &str) {
     let filter_layer = EnvFilter::new(filter);
     if use_json {
         tracing_subscriber::registry()
@@ -108,8 +107,4 @@ fn init(use_json: bool, filter: &str) {
             .with(fmt_layer)
             .init();
     }
-}
-
-pub fn setup(config: &Config) {
-    init(config.use_json_log, &config.log_filter)
 }

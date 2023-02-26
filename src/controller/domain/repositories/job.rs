@@ -21,7 +21,7 @@ pub trait JobRepository: Send + Sync + 'static {
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<PgQueryResult>;
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &JobId,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -102,7 +102,7 @@ impl JobRepository for PgJobRepository {
         .context(format!(r#"failed to delete "{}" from [job]"#, id.as_uuid()))
     }
 
-    async fn find_by_id(
+    async fn get_by_id(
         &self,
         id: &JobId,
         executor: impl PgAcquire<'_> + 'async_trait,
@@ -210,7 +210,7 @@ mod tests {
 
     #[sqlx::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
-    async fn test_create_and_find_by_id(pool: PgPool) -> Result<()> {
+    async fn test_create_and_get_by_id(pool: PgPool) -> Result<()> {
         let repo = PgJobRepository;
         let mut tx = pool
             .begin()
@@ -226,7 +226,7 @@ mod tests {
             .await
             .expect("new job should be created");
         let fetched = repo
-            .find_by_id(&job.id(), &mut tx)
+            .get_by_id(&job.id(), &mut tx)
             .await
             .expect("inserted job should be found");
         if let Some(fetched) = fetched {
