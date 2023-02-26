@@ -74,15 +74,15 @@ impl ProjectRepository for PgProjectRepository {
                  description = $3,
                  config = COALESCE($4, project.config)",
         )
-        .bind(project.id().to_uuid())
+        .bind(project.id().as_uuid())
         .bind(project.name().as_str())
         .bind(project.description().as_str())
-        .bind(project.config().as_ref().map(|config| config.to_json()))
+        .bind(project.config().as_ref().map(|config| config.as_json()))
         .execute(&mut *conn)
         .await
         .context(format!(
             r#"failed to upsert "{}" into [project]"#,
-            project.id().to_uuid()
+            project.id().as_uuid()
         ))
     }
 
@@ -99,12 +99,12 @@ impl ProjectRepository for PgProjectRepository {
             "DELETE FROM project
              WHERE id = $1",
         )
-        .bind(id.to_uuid())
+        .bind(id.as_uuid())
         .execute(&mut *conn)
         .await
         .context(format!(
             r#"failed to delete "{}" from [project]"#,
-            id.to_uuid()
+            id.as_uuid()
         ))
     }
 
@@ -159,12 +159,12 @@ impl ProjectRepository for PgProjectRepository {
              FROM project
              WHERE id = $1",
         )
-        .bind(id.to_uuid())
+        .bind(id.as_uuid())
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
             r#"failed to select "{}" from [project]"#,
-            id.to_uuid()
+            id.as_uuid()
         ))?;
         Ok(row)
     }
@@ -256,12 +256,12 @@ impl ProjectRepository for PgProjectRepository {
              FROM project
              WHERE id = $1",
         )
-        .bind(id.to_uuid())
+        .bind(id.as_uuid())
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
             r#"failed to summarize "{}" from [project]"#,
-            id.to_uuid()
+            id.as_uuid()
         ))?;
         Ok(row)
     }
@@ -307,9 +307,9 @@ mod tests {
             .await
             .expect("inserted project should be found");
         if let Some(fetched) = fetched {
-            assert_eq!(fetched.id, project.id().to_uuid());
-            assert_eq!(fetched.name, project.name().as_str());
-            assert_eq!(fetched.description, project.description().as_str());
+            assert_eq!(&fetched.id, project.id().as_uuid());
+            assert_eq!(&fetched.name, project.name().as_str());
+            assert_eq!(&fetched.description, project.description().as_str());
             assert!(fetched.config.is_some());
         } else {
             panic!("inserted project should be found");
@@ -336,9 +336,9 @@ mod tests {
             .await
             .expect("inserted project should be found");
         if let Some(fetched) = fetched {
-            assert_eq!(fetched.id, project.id().to_uuid());
-            assert_eq!(fetched.name, project.name().as_str());
-            assert_eq!(fetched.description, project.description().as_str());
+            assert_eq!(&fetched.id, project.id().as_uuid());
+            assert_eq!(&fetched.name, project.name().as_str());
+            assert_eq!(&fetched.description, project.description().as_str());
             assert!(fetched.config.is_some());
         } else {
             panic!("inserted project should be found");

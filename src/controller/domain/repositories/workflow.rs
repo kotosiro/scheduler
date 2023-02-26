@@ -56,16 +56,16 @@ impl WorkflowRepository for PgWorkflowRepository {
                  description = $4,
                  paused = $5",
         )
-        .bind(workflow.id().to_uuid())
+        .bind(workflow.id().as_uuid())
         .bind(workflow.name().as_str())
-        .bind(workflow.project_id().to_uuid())
+        .bind(workflow.project_id().as_uuid())
         .bind(workflow.description().as_str())
-        .bind(workflow.paused().to_bool())
+        .bind(workflow.paused().as_bool())
         .execute(&mut *conn)
         .await
         .context(format!(
             r#"failed to upsert "{}" into [workflow]"#,
-            workflow.id().to_uuid()
+            workflow.id().as_uuid()
         ))
     }
 
@@ -82,12 +82,12 @@ impl WorkflowRepository for PgWorkflowRepository {
             "DELETE FROM workflow
              WHERE id = $1",
         )
-        .bind(id.to_uuid())
+        .bind(id.as_uuid())
         .execute(&mut *conn)
         .await
         .context(format!(
             r#"failed to delete "{}" from [workflow]"#,
-            id.to_uuid()
+            id.as_uuid()
         ))
     }
 
@@ -112,12 +112,12 @@ impl WorkflowRepository for PgWorkflowRepository {
              FROM workflow
              WHERE id = $1",
         )
-        .bind(id.to_uuid())
+        .bind(id.as_uuid())
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
             r#"failed to select "{}" from [workflow]"#,
-            id.to_uuid()
+            id.as_uuid()
         ))?;
         Ok(row)
     }
@@ -155,7 +155,7 @@ mod tests {
         let workflow = Workflow::new(
             testutils::rand::uuid(),
             testutils::rand::string(10),
-            project_id.to_uuid().to_string(),
+            project_id.as_uuid().to_string(),
             testutils::rand::string(10),
             testutils::rand::bool(),
         )
@@ -185,11 +185,11 @@ mod tests {
             .await
             .expect("inserted workflow should be found");
         if let Some(fetched) = fetched {
-            assert_eq!(fetched.id, workflow.id().to_uuid());
-            assert_eq!(fetched.name, workflow.name().as_str());
-            assert_eq!(fetched.project_id, workflow.project_id().to_uuid());
-            assert_eq!(fetched.description, workflow.description().as_str());
-            assert_eq!(fetched.paused, workflow.paused().to_bool());
+            assert_eq!(&fetched.id, workflow.id().as_uuid());
+            assert_eq!(&fetched.name, workflow.name().as_str());
+            assert_eq!(&fetched.project_id, workflow.project_id().as_uuid());
+            assert_eq!(&fetched.description, workflow.description().as_str());
+            assert_eq!(&fetched.paused, workflow.paused().as_bool());
         } else {
             panic!("inserted workflow should be found");
         }

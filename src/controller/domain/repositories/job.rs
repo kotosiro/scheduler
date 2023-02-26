@@ -58,10 +58,10 @@ impl JobRepository for PgJobRepository {
                  args = $6,
                  envs = $7",
         )
-        .bind(job.id().to_uuid())
+        .bind(job.id().as_uuid())
         .bind(job.name().as_str())
-        .bind(job.workflow_id().to_uuid())
-        .bind(job.threshold().to_i32())
+        .bind(job.workflow_id().as_uuid())
+        .bind(job.threshold().as_i32())
         .bind(job.image().as_str())
         .bind(
             job.args()
@@ -79,7 +79,7 @@ impl JobRepository for PgJobRepository {
         .await
         .context(format!(
             r#"failed to upsert "{}" into [job]"#,
-            job.id().to_uuid()
+            job.id().as_uuid()
         ))
     }
 
@@ -96,10 +96,10 @@ impl JobRepository for PgJobRepository {
             "DELETE FROM job
              WHERE id = $1",
         )
-        .bind(id.to_uuid())
+        .bind(id.as_uuid())
         .execute(&mut *conn)
         .await
-        .context(format!(r#"failed to delete "{}" from [job]"#, id.to_uuid()))
+        .context(format!(r#"failed to delete "{}" from [job]"#, id.as_uuid()))
     }
 
     async fn find_by_id(
@@ -125,10 +125,10 @@ impl JobRepository for PgJobRepository {
              FROM job
              WHERE id = $1",
         )
-        .bind(id.to_uuid())
+        .bind(id.as_uuid())
         .fetch_optional(&mut *conn)
         .await
-        .context(format!(r#"failed to select "{}" from [job]"#, id.to_uuid()))?;
+        .context(format!(r#"failed to select "{}" from [job]"#, id.as_uuid()))?;
         Ok(row)
     }
 }
@@ -169,7 +169,7 @@ mod tests {
         let workflow = Workflow::new(
             testutils::rand::uuid(),
             testutils::rand::string(10),
-            project_id.to_uuid().to_string(),
+            project_id.as_uuid().to_string(),
             testutils::rand::string(10),
             testutils::rand::bool(),
         )
@@ -195,7 +195,7 @@ mod tests {
         let job = Job::new(
             testutils::rand::uuid(),
             testutils::rand::string(10),
-            workflow_id.to_uuid().to_string(),
+            workflow_id.as_uuid().to_string(),
             testutils::rand::i32(0, 10),
             testutils::rand::string(10),
             args,
@@ -228,13 +228,13 @@ mod tests {
         let fetched = repo
             .find_by_id(&job.id(), &mut tx)
             .await
-            .expect("inserted workflow should be found");
+            .expect("inserted job should be found");
         if let Some(fetched) = fetched {
-            assert_eq!(fetched.id, job.id().to_uuid());
-            assert_eq!(fetched.name, job.name().as_str());
-            assert_eq!(fetched.workflow_id, job.workflow_id().to_uuid());
-            assert_eq!(fetched.threshold, job.threshold().to_i32());
-            assert_eq!(fetched.image, job.image().as_str());
+            assert_eq!(&fetched.id, job.id().as_uuid());
+            assert_eq!(&fetched.name, job.name().as_str());
+            assert_eq!(&fetched.workflow_id, job.workflow_id().as_uuid());
+            assert_eq!(&fetched.threshold, job.threshold().as_i32());
+            assert_eq!(&fetched.image, job.image().as_str());
             assert_eq!(
                 fetched.args,
                 job.args()
