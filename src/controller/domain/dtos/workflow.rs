@@ -15,7 +15,7 @@ pub struct Workflow {
 
 #[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
 pub struct WorkflowSummary {
-    pub job_id: Uuid,
+    pub id: Uuid,
     pub name: String,
     pub description: String,
     pub paused: bool,

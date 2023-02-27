@@ -14,6 +14,10 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+#[serde(transparent)]
+pub struct ProjectConfig(pub Json);
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
 pub struct ProjectSummary {
     pub id: Uuid,
     pub name: String,
