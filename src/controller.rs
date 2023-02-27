@@ -1,9 +1,12 @@
 mod domain;
 mod services;
 use crate::config::Config;
-//use anyhow::Result;
+use crate::middlewares;
+use anyhow::Context;
+use anyhow::Result;
 use lapin::Connection;
 use sqlx::PgPool;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct Controller {
@@ -13,15 +16,23 @@ pub struct Controller {
     pub config: Config,
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_add() {
-        assert_eq!(1 + 2, 3);
+impl Controller {
+    pub async fn new(config: Config) -> Result<Arc<Self>> {
+        let db_pool = middlewares::new_pg_pool(&config)
+            .await
+            .context("failed to create postgres connection pool")?;
+        let mq_conn = middlewares::new_rmq_connection(&config)
+            .await
+            .context("failed to create rabbitmq connection")?;
+        Ok(Arc::new(Controller {
+            id: Uuid::new_v4(),
+            db_pool,
+            mq_conn,
+            config,
+        }))
     }
 
-    #[test]
-    fn test_bad_add() {
-        assert_eq!(1 + 2, 3);
+    pub async fn start(self: Arc<Self>) -> Result<()> {
+        Ok(())
     }
 }
