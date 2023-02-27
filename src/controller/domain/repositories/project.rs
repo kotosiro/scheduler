@@ -3,7 +3,7 @@ use crate::controller::domain::dtos::project::ProjectSummary as ProjectSummaryRo
 use crate::controller::domain::entities::project::Project;
 use crate::controller::domain::entities::project::ProjectId;
 use crate::controller::domain::entities::project::ProjectName;
-use crate::infra::postgres::PgAcquire;
+use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;

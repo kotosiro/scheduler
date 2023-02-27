@@ -1,7 +1,7 @@
 use crate::controller::domain::dtos::workflow::Workflow as WorkflowRow;
 use crate::controller::domain::entities::workflow::Workflow;
 use crate::controller::domain::entities::workflow::WorkflowId;
-use crate::infra::postgres::PgAcquire;
+use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;

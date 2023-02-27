@@ -1,7 +1,7 @@
 use crate::controller::domain::dtos::job::Job as JobRow;
 use crate::controller::domain::entities::job::Job;
 use crate::controller::domain::entities::job::JobId;
-use crate::infra::postgres::PgAcquire;
+use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;

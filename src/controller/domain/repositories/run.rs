@@ -1,7 +1,7 @@
 use crate::controller::domain::dtos::run::Run as RunRow;
 use crate::controller::domain::entities::run::Run;
 use crate::controller::domain::entities::run::RunId;
-use crate::infra::postgres::PgAcquire;
+use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;
