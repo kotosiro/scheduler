@@ -1,6 +1,6 @@
 pub mod api;
 pub mod internal;
-use crate::controller::services::config;
+use crate::controller::services::config::ConfigService;
 use crate::controller::Controller;
 use anyhow::Context;
 use anyhow::Result;
@@ -29,9 +29,11 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
         mq_chan,
         controller,
     });
-    config::setup(&state.mq_chan)
+    state
+        .mq_chan
+        .setup()
         .await
-        .context("failed to setup config cache")?;
+        .context("failed to setup config service")?;
     let app = Router::new().route("/", get(root)).with_state(state);
     Ok(app)
 }

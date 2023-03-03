@@ -1,5 +1,7 @@
 use uuid::Uuid;
 
+pub const CONFIG_UPDATES_EXCHANGE: &str = "kotosiro.updates.config";
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub enum ConfigUpdate {
     Project(Uuid),
