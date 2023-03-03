@@ -1,5 +1,6 @@
 mod domain;
 mod services;
+mod use_cases;
 use crate::config::Config;
 use crate::middlewares;
 use anyhow::Context;

@@ -1,5 +1,5 @@
 use super::workflow::WorkflowId;
-use crate::impl_i64_property;
+use crate::impl_i32_property;
 use crate::impl_string_property;
 use crate::impl_uuid_property;
 use anyhow::Result;
@@ -26,10 +26,10 @@ impl_string_property!(JobName);
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
 pub struct JobThreshold {
     #[validate(range(min = 0, max = 100))]
-    value: i64,
+    value: i32,
 }
 
-impl_i64_property!(JobThreshold);
+impl_i32_property!(JobThreshold);
 
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
 pub struct JobImage {
@@ -78,7 +78,7 @@ impl Job {
         id: String,
         name: String,
         workflow_id: String,
-        threshold: i64,
+        threshold: i32,
         image: String,
         args: Vec<String>,
         envs: Vec<String>,
@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn test_valid_job_threshold() {
         assert!(matches!(
-            JobThreshold::new(testutils::rand::i64(0, 100)),
+            JobThreshold::new(testutils::rand::i32(0, 100)),
             Ok(_)
         ));
     }
@@ -133,11 +133,11 @@ mod tests {
     #[test]
     fn test_invalid_job_threshold() {
         assert!(matches!(
-            JobThreshold::new(testutils::rand::i64(-1000, -1)),
+            JobThreshold::new(testutils::rand::i32(-1000, -1)),
             Err(_)
         ));
         assert!(matches!(
-            JobThreshold::new(testutils::rand::i64(101, 1000)),
+            JobThreshold::new(testutils::rand::i32(101, 1000)),
             Err(_)
         ));
     }

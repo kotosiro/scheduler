@@ -20,6 +20,23 @@ macro_rules! impl_bool_property {
 }
 
 #[macro_export]
+macro_rules! impl_i32_property {
+    ( $type:tt ) => {
+        impl $type {
+            pub fn new(value: i32) -> anyhow::Result<Self> {
+                let object = Self { value };
+                object.validate()?;
+                Ok(object)
+            }
+
+            pub fn as_i32(&self) -> &i32 {
+                &self.value
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! impl_i64_property {
     ( $type:tt ) => {
         impl $type {

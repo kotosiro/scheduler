@@ -185,7 +185,7 @@ mod tests {
             testutils::rand::uuid(),
             testutils::rand::string(10),
             workflow_id.as_uuid().to_string(),
-            testutils::rand::i64(0, 10),
+            testutils::rand::i32(0, 10),
             testutils::rand::string(10),
             args,
             envs,
