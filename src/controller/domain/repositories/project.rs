@@ -387,8 +387,6 @@ mod tests {
     use crate::controller::domain::entities::job::Job;
     use crate::controller::domain::entities::job::JobId;
     use crate::controller::domain::entities::run::Run;
-    use crate::controller::domain::entities::run::RunPriority;
-    use crate::controller::domain::entities::token::TokenState;
     use crate::controller::domain::entities::workflow::Workflow;
     use crate::controller::domain::entities::workflow::WorkflowId;
     use crate::controller::domain::repositories::job::JobRepository;
@@ -397,6 +395,8 @@ mod tests {
     use crate::controller::domain::repositories::run::RunRepository;
     use crate::controller::domain::repositories::workflow::PgWorkflowRepository;
     use crate::controller::domain::repositories::workflow::WorkflowRepository;
+    use crate::messages::run::RunPriority;
+    use crate::messages::token::TokenState;
     use anyhow::Context;
     use anyhow::Result;
     use chrono::Utc;

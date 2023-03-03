@@ -1,5 +1,7 @@
+use anyhow::Context;
 use anyhow::Result;
 use kotosiro::config::Config;
+use kotosiro::controller::Controller;
 use kotosiro::logging;
 use tracing::debug;
 
@@ -38,6 +40,13 @@ async fn main() -> Result<()> {
     match args.subcommand().expect("subcommand is required") {
         ("controller", _args) => {
             debug!("controller is called");
+            let controller = Controller::new(conf)
+                .await
+                .context("failed to create controller")?;
+            controller
+                .start()
+                .await
+                .context("failed to start controller")?;
             Ok(())
         }
         ("runner", _args) => {

@@ -64,11 +64,10 @@ where
         let normalized = event.normalized_metadata();
         let metadata = normalized.as_ref().unwrap_or_else(|| event.metadata());
         let header = format!(
-            "{:width$}| {} [{}]",
+            "{} | {} [{}]",
             metadata.target(),
             chrono::Local::now().to_rfc3339_opts(SecondsFormat::Millis, false),
             metadata.level(),
-            width = 10
         );
         writeln!(writer, "{}", colorize(*metadata.level(), header))?;
         ctx.field_format().format_fields(writer.by_ref(), event)?;

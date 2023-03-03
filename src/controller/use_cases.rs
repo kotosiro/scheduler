@@ -1,19 +1,38 @@
 pub mod api;
 pub mod internal;
+use crate::controller::services::config;
 use crate::controller::Controller;
 use anyhow::Context;
 use anyhow::Result;
 use axum::routing::get;
 use axum::Router;
+use lapin::Channel;
 use std::sync::Arc;
 use tracing::debug;
+
+pub struct State {
+    mq_chan: Channel,
+    controller: Arc<Controller>,
+}
 
 async fn root() -> &'static str {
     "Hello, World!"
 }
 
 async fn route(controller: Arc<Controller>) -> Result<Router> {
-    let app = Router::new().route("/", get(root));
+    let mq_chan = controller
+        .mq_conn
+        .create_channel()
+        .await
+        .context("failed to create rabbitmq channel")?;
+    let state = Arc::new(State {
+        mq_chan,
+        controller,
+    });
+    config::setup(&state.mq_chan)
+        .await
+        .context("failed to setup config cache")?;
+    let app = Router::new().route("/", get(root)).with_state(state);
     Ok(app)
 }
 

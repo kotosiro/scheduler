@@ -34,6 +34,9 @@ impl Controller {
     }
 
     pub async fn start(self: Arc<Self>) -> Result<()> {
+        use_cases::bind(self)
+            .await
+            .context("failed to start API server")?;
         Ok(())
     }
 }

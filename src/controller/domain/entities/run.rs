@@ -1,6 +1,7 @@
 use super::job::JobId;
-use super::token::TokenState;
 use crate::impl_uuid_property;
+use crate::messages::run::RunPriority;
+use crate::messages::token::TokenState;
 use anyhow::Result;
 use chrono::DateTime;
 use chrono::Utc;
@@ -14,48 +15,6 @@ pub struct RunId {
 }
 
 impl_uuid_property!(RunId);
-
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    serde::Serialize,
-    serde::Deserialize,
-    sqlx::Type,
-    strum_macros::EnumString,
-)]
-#[serde(rename_all = "lowercase")]
-#[sqlx(rename_all = "lowercase")]
-#[sqlx(type_name = "VARCHAR")]
-pub enum RunPriority {
-    #[strum(ascii_case_insensitive)]
-    BackFill = 0,
-    #[strum(ascii_case_insensitive)]
-    Low = 1,
-    #[strum(ascii_case_insensitive)]
-    Normal = 2,
-    #[strum(ascii_case_insensitive)]
-    High = 3,
-}
-
-impl AsRef<str> for RunPriority {
-    fn as_ref(&self) -> &str {
-        match self {
-            RunPriority::BackFill => "backfill",
-            RunPriority::Low => "low",
-            RunPriority::Normal => "normal",
-            RunPriority::High => "high",
-        }
-    }
-}
-
-impl Default for RunPriority {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
 pub struct Run {
@@ -92,7 +51,6 @@ impl Run {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
 
     #[test]
     fn test_valid_run_id() {
@@ -105,19 +63,5 @@ mod tests {
             RunId::try_from(testutils::rand::string(255)),
             Err(_)
         ));
-    }
-
-    #[test]
-    fn test_valid_run_priority() {
-        let candidates = vec!["BackFill", "Low", "Normal", "High"];
-        let priority = testutils::rand::choice(&candidates);
-        assert!(matches!(RunPriority::from_str(priority), Ok(_)));
-    }
-
-    #[test]
-    fn test_invalid_run_priority() {
-        let candidates = vec!["Apple", "Orange", "Strawberry", "Grape"];
-        let priority = testutils::rand::choice(&candidates);
-        assert!(matches!(RunPriority::from_str(priority), Err(_)));
     }
 }
