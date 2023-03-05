@@ -29,9 +29,7 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
         mq_chan,
         controller,
     });
-    state
-        .mq_chan
-        .setup()
+    ConfigService::setup(&state.mq_chan)
         .await
         .context("failed to setup config service")?;
     let app = Router::new().route("/", get(root)).with_state(state);

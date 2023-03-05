@@ -18,6 +18,10 @@ testdb:
     @# $ docker compose -f ./devops/local/docker-compose.yaml up
     @cargo test -- --nocapture --ignored
 
+# Run local docker emvironment
+docker:
+    @docker compose -f devops/local/docker-compose.yaml up
+
 # Build Kotosiro into a docker image for local use
 package:
     DOCKER_BUILDKIT=1 docker build . -t kotosiro:local -f devops/docker/Dockerfile
