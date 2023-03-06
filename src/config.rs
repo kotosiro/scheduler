@@ -11,6 +11,7 @@ pub struct Config {
     pub cluster_gossip_bind: String,
     pub cluster_gossip_addr: String,
     pub mq_addr: String,
+    pub no_auth: bool,
     pub use_json_log: bool,
     pub log_filter: String,
 }

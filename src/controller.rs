@@ -8,6 +8,7 @@ use anyhow::Result;
 use lapin::Connection;
 use sqlx::PgPool;
 use std::sync::Arc;
+use tracing::warn;
 use uuid::Uuid;
 
 pub struct Controller {
@@ -34,6 +35,9 @@ impl Controller {
     }
 
     pub async fn start(self: Arc<Self>) -> Result<()> {
+        if self.config.no_auth {
+            warn!("authorization is disabled, this is not recommended in production");
+        }
         use_cases::bind(self)
             .await
             .context("failed to start API server")?;

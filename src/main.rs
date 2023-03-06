@@ -36,6 +36,8 @@ async fn main() -> Result<()> {
         cluster_gossip_addr = &conf.cluster_gossip_addr,
         cluster_gossip_bind = &conf.cluster_gossip_bind,
         mq_addr = &conf.mq_addr,
+        no_auth = &conf.no_auth,
+        use_json_log = &conf.use_json_log,
     );
     match args.subcommand().expect("subcommand is required") {
         ("controller", _args) => {

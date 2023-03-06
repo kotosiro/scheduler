@@ -4,5 +4,6 @@ controller_addr = "http://127.0.0.1:8080/"
 cluster_gossip_bind = "127.0.0.1:7111"
 cluster_gossip_addr = "127.0.0.1:7111"
 mq_addr = "amqp://127.0.0.1:5672/%2f"
+no_auth = false
 use_json_log = false
 log_filter = "warn,kotosiro=info,lapin"
