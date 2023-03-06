@@ -82,24 +82,24 @@ app.kubernetes.io/instance: {{ .Release.Name }}-controller
 {{/*
 Database.
 */}}
-{{- define "kotosiro.db.name" -}}
-{{ include "kotosiro.name" . }}-db
+{{- define "kotosiro.postgres.name" -}}
+{{ include "kotosiro.name" . }}-postgres
 {{- end }}
 
-{{- define "kotosiro.db.fullname" -}}
-{{ include "kotosiro.fullname" . }}-db
+{{- define "kotosiro.postgres.fullname" -}}
+{{ include "kotosiro.fullname" . }}-postgres
 {{- end -}}
 
-{{- define "kotosiro.db.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "kotosiro.name" . }}-db
-app.kubernetes.io/instance: {{ .Release.Name }}-db
+{{- define "kotosiro.postgres.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "kotosiro.name" . }}-postgres
+app.kubernetes.io/instance: {{ .Release.Name }}-postgres
 {{- end }}
 
-{{- define "kotosiro.db.secretName" -}}
-    {{- if .Values.global.db.existingSecret -}}
-        {{- printf "%s" .Values.global.db.existingSecret -}}
+{{- define "kotosiro.postgres.secretName" -}}
+    {{- if .Values.global.postgres.existingSecret -}}
+        {{- printf "%s" .Values.global.postgres.existingSecret -}}
     {{- else -}}
-        {{- printf "%s" (include "kotosiro.db.fullname" .) -}}
+        {{- printf "%s" (include "kotosiro.postgres.fullname" .) -}}
     {{- end -}}
 {{- end -}}
 
@@ -107,15 +107,15 @@ app.kubernetes.io/instance: {{ .Release.Name }}-db
 {{/*
 Message Queueing.
 */}}
-{{- define "kotosiro.mq.name" -}}
-{{ include "kotosiro.name" . }}-mq
+{{- define "kotosiro.rabbitmq.name" -}}
+{{ include "kotosiro.name" . }}-rabbitmq
 {{- end }}
 
-{{- define "kotosiro.mq.fullname" -}}
-{{ include "kotosiro.fullname" . }}-mq
+{{- define "kotosiro.rabbitmq.fullname" -}}
+{{ include "kotosiro.fullname" . }}-rabbitmq
 {{- end -}}
 
-{{- define "kotosiro.mq.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "kotosiro.name" . }}-mq
-app.kubernetes.io/instance: {{ .Release.Name }}-mq
+{{- define "kotosiro.rabbitmq.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "kotosiro.name" . }}-rabbitmq
+app.kubernetes.io/instance: {{ .Release.Name }}-rabbitmq
 {{- end }}

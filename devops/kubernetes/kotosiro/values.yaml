@@ -18,7 +18,7 @@ controller:
 
 
 # Default values for kotosiro database.
-db:
+postgres:
   replicaCount: 1
   storageSize: 1G
   proxyPort: 5432
@@ -26,7 +26,7 @@ db:
 
 
 # Default values for kotosiro message queueing.
-mq:
+rabbitmq:
   replicaCount: 1
   storageSize: 1G
   listenerPort: 5672
