@@ -119,3 +119,20 @@ Message Queueing.
 app.kubernetes.io/name: {{ include "kotosiro.name" . }}-rabbitmq
 app.kubernetes.io/instance: {{ .Release.Name }}-rabbitmq
 {{- end }}
+
+
+{{/*
+Open Policy Agent.
+*/}}
+{{- define "kotosiro.opa.name" -}}
+{{ include "kotosiro.name" . }}-opa
+{{- end }}
+
+{{- define "kotosiro.opa.fullname" -}}
+{{ include "kotosiro.fullname" . }}-opa
+{{- end -}}
+
+{{- define "kotosiro.opa.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "kotosiro.name" . }}-opa
+app.kubernetes.io/instance: {{ .Release.Name }}-opa
+{{- end }}

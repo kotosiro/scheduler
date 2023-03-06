@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kotosiro.opa.fullname" . }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: opa
+      port: {{ .Values.opa.proxyPort }}
+      targetPort: 8181
+  selector: {{- include "kotosiro.opa.selectorLabels" . | nindent 4 }}
+status:
+  loadBalancer: {}
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kotosiro.opa.fullname" . }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.opa.replicaCount }}
+  selector:
+    matchLabels: {{- include "kotosiro.opa.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "kotosiro.opa.selectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+        - name: opa
+          image: openpolicyagent/opa
+          command: [ "run", "--server", "-b", "/policy"]
+          ports:
+            - containerPort: 8181
+          volumeMounts:
+            - name: {{ include "kotosiro.opa.fullname" . }}
+              mountPath: /policy/policy.rego
+              subPath: policy.rego
+          resources: {}
+      restartPolicy: Always
+      volumes:
+        - name: {{ include "kotosiro.opa.fullname" . }}
+          configMap:
+            name: {{ include "kotosiro.opa.fullname" . }}
+            items:
+              - key: policy.rego
+                path: policy.rego
+status: {}
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kotosiro.opa.fullname" . }}
+  labels: {{- include "kotosiro.labels" . | nindent 4 }}
+data:
+  policy.rego: |-
+    package kotosiro
+    default authorize = false
+    authorize {
+        is_read
+    }
+    is_read {
+        input.action == "Get"
+    }
+    is_read {
+        input.action == "List"
+    }

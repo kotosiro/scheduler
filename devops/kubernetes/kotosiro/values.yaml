@@ -34,6 +34,12 @@ rabbitmq:
   managerHost: rabbitmq.kotosiro.kube
 
 
+# Default values for kotosiro open policy agent.
+opa:
+  replicaCount: 1
+  proxyPort: 8181
+
+
 
 # Default values for kotosiro service.
 service:
