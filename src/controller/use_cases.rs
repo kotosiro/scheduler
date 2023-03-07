@@ -2,7 +2,7 @@ pub mod api;
 pub mod internal;
 use crate::controller::services::config::ConfigService;
 use crate::controller::Controller;
-use crate::messages::auth::Token;
+use crate::messages::opa::Token;
 use anyhow::Context;
 use anyhow::Result;
 use axum::extract::Extension;

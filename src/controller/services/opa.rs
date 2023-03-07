@@ -1,10 +1,10 @@
 use crate::config::Config;
-use crate::messages::auth::Action;
-use crate::messages::auth::Decision;
-use crate::messages::auth::Input;
-use crate::messages::auth::Query;
-use crate::messages::auth::Resource;
-use crate::messages::auth::Token;
+use crate::messages::opa::Action;
+use crate::messages::opa::Decision;
+use crate::messages::opa::Input;
+use crate::messages::opa::Query;
+use crate::messages::opa::Resource;
+use crate::messages::opa::Token;
 use anyhow::Context;
 use anyhow::Result;
 use axum::async_trait;
@@ -64,43 +64,50 @@ impl IntoResponse for TokenError {
     }
 }
 
-async fn query(config: &Config, token: Token, action: Action, resource: Resource) -> Result<bool> {
-    let opa = if let Some(opa) = config.opa_addr.as_ref() {
-        opa
-    } else {
-        error!(
-            "OPA sidecar address is unset (to disable auth you must set `KOTOSIRO_NO_AUTH=true`)"
-        );
-        return Ok(false);
-    };
-    let url = opa.join("/v1/data/kotosiro/authorize")?;
-    let res = reqwest::Client::new()
-        .post(url)
-        .json(&Query {
-            input: Input {
-                token: &token,
-                action: action,
-                resource: &resource,
-            },
-        })
-        .send()
-        .await
-        .context(format!(r#"failed to query OPA request to "{}""#, &opa))?;
-    let decision: Decision = res.json().await.context("failed to parse OPA response")?;
-    if decision.result.unwrap_or(false) {
-        debug!(?token, ?action, ?resource, "authorized");
-    } else {
-        warn!(?token, ?action, ?resource, "unauthorized");
-    }
-    Ok(decision.result.unwrap_or(false))
-}
-
-pub struct Checker {
+pub struct Event {
+    token: Token,
     action: Action,
     resource: Resource,
 }
 
-impl Checker {
+impl Event {
+    pub fn get() -> Self {
+        Self {
+            token: Token::None,
+            action: Action::Get,
+            resource: Default::default(),
+        }
+    }
+
+    pub fn list() -> Self {
+        Self {
+            token: Token::None,
+            action: Action::List,
+            resource: Default::default(),
+        }
+    }
+
+    pub fn update() -> Self {
+        Self {
+            token: Token::None,
+            action: Action::Update,
+            resource: Default::default(),
+        }
+    }
+
+    pub fn delete() -> Self {
+        Self {
+            token: Token::None,
+            action: Action::Delete,
+            resource: Default::default(),
+        }
+    }
+
+    pub fn token(mut self, token: impl Into<Token>) -> Self {
+        self.token = token.into();
+        self
+    }
+
     pub fn project(mut self, id: impl Into<Option<Uuid>>) -> Self {
         self.resource.project_id = id.into();
         self.resource.kind = "project".to_owned();
@@ -123,38 +130,41 @@ impl Checker {
         self
     }
 
+    async fn query(self, config: &Config) -> Result<bool> {
+        let opa = if let Some(opa) = config.opa_addr.as_ref() {
+            opa
+        } else {
+            error!(
+            "OPA sidecar address is unset (to disable auth you must set `KOTOSIRO_NO_AUTH=true`)"
+        );
+            return Ok(false);
+        };
+        let url = opa.join("/v1/data/kotosiro/authorize")?;
+        let res = reqwest::Client::new()
+            .post(url)
+            .json(&Query {
+                input: Input {
+                    token: &self.token,
+                    action: self.action,
+                    resource: &self.resource,
+                },
+            })
+            .send()
+            .await
+            .context(format!(r#"failed to query OPA request to "{}""#, &opa))?;
+        let decision: Decision = res.json().await.context("failed to parse OPA response")?;
+        if decision.result.unwrap_or(false) {
+            debug!(?self.token, ?self.action, ?self.resource, "authorized");
+        } else {
+            warn!(?self.token, ?self.action, ?self.resource, "unauthorized");
+        }
+        Ok(decision.result.unwrap_or(false))
+    }
+
     pub async fn authorize(self, config: &Config, token: Token) -> Result<()> {
         if config.no_auth {
             return Ok(());
         }
         Ok(())
-    }
-}
-
-pub fn get() -> Checker {
-    Checker {
-        action: Action::Get,
-        resource: Default::default(),
-    }
-}
-
-pub fn list() -> Checker {
-    Checker {
-        action: Action::List,
-        resource: Default::default(),
-    }
-}
-
-pub fn update() -> Checker {
-    Checker {
-        action: Action::Update,
-        resource: Default::default(),
-    }
-}
-
-pub fn delete() -> Checker {
-    Checker {
-        action: Action::Delete,
-        resource: Default::default(),
     }
 }
