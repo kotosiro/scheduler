@@ -7,9 +7,9 @@ authorize {
 }
 
 is_read {
-    input.action == "Get"
+    input.action == "get"
 }
 
 is_read {
-    input.action == "List"
+    input.action == "list"
 }

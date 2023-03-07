@@ -2,10 +2,14 @@ pub mod api;
 pub mod internal;
 use crate::controller::services::config::ConfigService;
 use crate::controller::Controller;
+use crate::messages::auth::Token;
 use anyhow::Context;
 use anyhow::Result;
+use axum::extract::Extension;
+use axum::middleware::from_extractor;
 use axum::routing::get;
 use axum::Router;
+use axum::{response::IntoResponse, Json};
 use lapin::Channel;
 use std::sync::Arc;
 use tracing::debug;
@@ -15,8 +19,22 @@ pub struct State {
     controller: Arc<Controller>,
 }
 
-async fn root() -> &'static str {
-    "Hello, World!"
+type SharedState = Arc<State>;
+
+#[derive(Debug, serde::Serialize)]
+struct ResponseBody {
+    message: String,
+    token: String,
+}
+
+async fn root(token: Token, Extension(state): Extension<SharedState>) -> impl IntoResponse {
+    let msg = format!("{:?}", &state.controller.config);
+    let tkn = format!("{:?}", &token);
+    let response = ResponseBody {
+        message: msg,
+        token: tkn,
+    };
+    Json(response)
 }
 
 async fn route(controller: Arc<Controller>) -> Result<Router> {
@@ -32,7 +50,11 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
     ConfigService::setup(&state.mq_chan)
         .await
         .context("failed to setup config service")?;
-    let app = Router::new().route("/", get(root)).with_state(state);
+    //    let app = Router::new().route("/", get(root)).with_state(state);
+    let app = Router::new()
+        .route("/", get(root))
+        .layer(Extension(state))
+        .layer(from_extractor::<Token>());
     Ok(app)
 }
 

@@ -1,6 +1,7 @@
 mod builder;
 use anyhow::Context;
 use anyhow::Result;
+use reqwest::Url;
 use std::path::Path;
 
 #[derive(serde::Deserialize, Clone, Debug)]
@@ -11,6 +12,7 @@ pub struct Config {
     pub cluster_gossip_bind: String,
     pub cluster_gossip_addr: String,
     pub mq_addr: String,
+    pub opa_addr: Option<Url>,
     pub no_auth: bool,
     pub use_json_log: bool,
     pub log_filter: String,
