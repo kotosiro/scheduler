@@ -1,10 +1,14 @@
 use crate::config::Config;
+use crate::controller::domain::entities::workflow::WorkflowId;
+use crate::controller::domain::repositories::workflow::PgWorkflowRepository;
+use crate::controller::domain::repositories::workflow::WorkflowRepository;
 use crate::messages::opa::Action;
 use crate::messages::opa::Decision;
 use crate::messages::opa::Input;
 use crate::messages::opa::Query;
 use crate::messages::opa::Resource;
 use crate::messages::opa::Token;
+use anyhow::anyhow;
 use anyhow::Context;
 use anyhow::Result;
 use axum::async_trait;
@@ -18,6 +22,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use axum::RequestPartsExt;
 use serde_json::json;
+use sqlx::PgPool;
 use tracing::debug;
 use tracing::error;
 use tracing::warn;
@@ -64,6 +69,7 @@ impl IntoResponse for TokenError {
     }
 }
 
+#[derive(Debug)]
 pub struct Event {
     token: Token,
     action: Action,
@@ -103,18 +109,18 @@ impl Event {
         }
     }
 
-    pub fn token(mut self, token: impl Into<Token>) -> Self {
+    pub fn with_token(mut self, token: impl Into<Token>) -> Self {
         self.token = token.into();
         self
     }
 
-    pub fn project(mut self, id: impl Into<Option<Uuid>>) -> Self {
+    pub fn on_project(mut self, id: impl Into<Option<Uuid>>) -> Self {
         self.resource.project_id = id.into();
         self.resource.kind = "project".to_owned();
         self
     }
 
-    pub fn workflow(
+    pub fn on_workflow(
         mut self,
         id: impl Into<Option<Uuid>>,
         project_id: impl Into<Option<Uuid>>,
@@ -125,12 +131,12 @@ impl Event {
         self
     }
 
-    pub fn kind(mut self, kind: impl Into<String>) -> Self {
+    pub fn of_kind(mut self, kind: impl Into<String>) -> Self {
         self.resource.kind = kind.into();
         self
     }
 
-    async fn query(self, config: &Config) -> Result<bool> {
+    async fn is_authorized(&self, config: &Config) -> Result<bool> {
         let opa = if let Some(opa) = config.opa_addr.as_ref() {
             opa
         } else {
@@ -160,11 +166,31 @@ impl Event {
         }
         Ok(decision.result.unwrap_or(false))
     }
+}
 
-    pub async fn authorize(self, config: &Config, token: Token) -> Result<()> {
+#[async_trait]
+pub trait OPAService {
+    async fn authorize(&self, config: &Config, mut event: Event) -> Result<()>;
+}
+
+#[async_trait]
+impl OPAService for PgPool {
+    async fn authorize(&self, config: &Config, mut event: Event) -> Result<()> {
         if config.no_auth {
             return Ok(());
         }
-        Ok(())
+        let repo = PgWorkflowRepository;
+        if let Some(id) = event.resource.workflow_id {
+            if event.resource.project_id.is_none() {
+                let workflow_id = WorkflowId::new(id);
+                let project_id = repo.get_project_id(&workflow_id, self).await?;
+                event.resource.project_id = project_id;
+            }
+        }
+        if event.is_authorized(config).await? {
+            Ok(())
+        } else {
+            Err(anyhow!(r#"failed to authorize event "{:?}""#, event))
+        }
     }
 }

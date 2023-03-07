@@ -6,6 +6,7 @@ use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::postgres::PgQueryResult;
+use uuid::Uuid;
 
 #[async_trait]
 pub trait WorkflowRepository: Send + Sync + 'static {
@@ -26,6 +27,12 @@ pub trait WorkflowRepository: Send + Sync + 'static {
         id: &WorkflowId,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Option<WorkflowRow>>;
+
+    async fn get_project_id(
+        &self,
+        id: &WorkflowId,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Option<Uuid>>;
 }
 
 pub struct PgWorkflowRepository;
@@ -121,6 +128,36 @@ impl WorkflowRepository for PgWorkflowRepository {
         ))?;
         Ok(row)
     }
+
+    async fn get_project_id(
+        &self,
+        id: &WorkflowId,
+        executor: impl PgAcquire<'_> + 'async_trait,
+    ) -> Result<Option<Uuid>> {
+        let mut conn = executor
+            .acquire()
+            .await
+            .context("failed to acquire postgres connection")?;
+        let row: Option<(Uuid,)> = sqlx::query_as::<_, (Uuid,)>(
+            "SELECT
+                 project_id
+             FROM workflow
+             WHERE id = $1",
+        )
+        .bind(id.as_uuid())
+        .fetch_optional(&mut *conn)
+        .await
+        .context(format!(
+            r#"failed to select project id of "{}" from [workflow]"#,
+            id.as_uuid()
+        ))?;
+        match row {
+            Some((id,)) => Ok(Some(id)),
+            _ => Ok(None),
+            //            None => Err(highnoon::Error::bad_request("job not found")),
+        }
+        //        Ok(row)
+    }
 }
 
 #[cfg(test)]
@@ -190,6 +227,35 @@ mod tests {
             assert_eq!(&fetched.project_id, workflow.project_id().as_uuid());
             assert_eq!(&fetched.description, workflow.description().as_str());
             assert_eq!(&fetched.paused, workflow.paused().as_bool());
+        } else {
+            panic!("inserted workflow should be found");
+        }
+        tx.rollback()
+            .await
+            .expect("rollback should be done properly");
+        Ok(())
+    }
+
+    #[sqlx::test]
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    async fn test_create_and_get_project_id(pool: PgPool) -> Result<()> {
+        let repo = PgWorkflowRepository;
+        let mut tx = pool
+            .begin()
+            .await
+            .expect("transaction should be started properly");
+        let project = create_project(&mut tx)
+            .await
+            .expect("new project should be created");
+        let workflow = create_workflow(&project.id(), &mut tx)
+            .await
+            .expect("new workflow should be created");
+        let fetched = repo
+            .get_project_id(&workflow.id(), &mut tx)
+            .await
+            .expect("inserted workflow should be found");
+        if let Some(fetched) = fetched {
+            assert_eq!(&fetched, workflow.project_id().as_uuid());
         } else {
             panic!("inserted workflow should be found");
         }

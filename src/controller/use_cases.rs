@@ -1,6 +1,8 @@
 pub mod api;
 pub mod internal;
 use crate::controller::services::config::ConfigService;
+use crate::controller::services::opa::Event;
+use crate::controller::services::opa::OPAService;
 use crate::controller::Controller;
 use crate::messages::opa::Token;
 use anyhow::Context;
@@ -24,16 +26,21 @@ type SharedState = Arc<State>;
 #[derive(Debug, serde::Serialize)]
 struct ResponseBody {
     message: String,
-    token: String,
 }
 
 async fn root(token: Token, Extension(state): Extension<SharedState>) -> impl IntoResponse {
+    match OPAService::authorize(
+        &state.controller.db_pool,
+        &state.controller.config,
+        Event::get().with_token(token),
+    )
+    .await
+    {
+        Ok(_) => debug!("authorized"),
+        Err(e) => debug!(?e),
+    }
     let msg = format!("{:?}", &state.controller.config);
-    let tkn = format!("{:?}", &token);
-    let response = ResponseBody {
-        message: msg,
-        token: tkn,
-    };
+    let response = ResponseBody { message: msg };
     Json(response)
 }
 
@@ -50,7 +57,6 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
     ConfigService::setup(&state.mq_chan)
         .await
         .context("failed to setup config service")?;
-    //    let app = Router::new().route("/", get(root)).with_state(state);
     let app = Router::new()
         .route("/", get(root))
         .layer(Extension(state))
