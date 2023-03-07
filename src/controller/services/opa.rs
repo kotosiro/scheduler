@@ -1,4 +1,3 @@
-use crate::config::Config;
 use crate::controller::domain::entities::workflow::WorkflowId;
 use crate::controller::domain::repositories::workflow::PgWorkflowRepository;
 use crate::controller::domain::repositories::workflow::WorkflowRepository;
@@ -21,6 +20,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use axum::RequestPartsExt;
+use reqwest::Url;
 use serde_json::json;
 use sqlx::PgPool;
 use tracing::debug;
@@ -136,8 +136,8 @@ impl Event {
         self
     }
 
-    async fn is_authorized(&self, config: &Config) -> Result<bool> {
-        let opa = if let Some(opa) = config.opa_addr.as_ref() {
+    async fn is_authorized(&self, url: &Option<String>) -> Result<bool> {
+        let opa = if let Some(opa) = url {
             opa
         } else {
             error!(
@@ -145,7 +145,8 @@ impl Event {
         );
             return Ok(false);
         };
-        let url = opa.join("/v1/data/kotosiro/authorize")?;
+        let url = Url::parse(opa).context(format!(r#"failed to parse OPA url "{}""#, &opa))?;
+        let url = url.join("/v1/data/kotosiro/authorize")?;
         let res = reqwest::Client::new()
             .post(url)
             .json(&Query {
@@ -170,13 +171,13 @@ impl Event {
 
 #[async_trait]
 pub trait OPAService {
-    async fn authorize(&self, config: &Config, mut event: Event) -> Result<()>;
+    async fn authorize(&self, no_auth: bool, url: &Option<String>, mut event: Event) -> Result<()>;
 }
 
 #[async_trait]
 impl OPAService for PgPool {
-    async fn authorize(&self, config: &Config, mut event: Event) -> Result<()> {
-        if config.no_auth {
+    async fn authorize(&self, no_auth: bool, url: &Option<String>, mut event: Event) -> Result<()> {
+        if no_auth {
             return Ok(());
         }
         let repo = PgWorkflowRepository;
@@ -187,10 +188,48 @@ impl OPAService for PgPool {
                 event.resource.project_id = project_id;
             }
         }
-        if event.is_authorized(config).await? {
+        if event.is_authorized(url).await? {
             Ok(())
         } else {
             Err(anyhow!(r#"failed to authorize event "{:?}""#, event))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[sqlx::test]
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    async fn test_authorized(pool: PgPool) {
+        let no_auth: bool = testutils::rand::bool();
+        let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
+        OPAService::authorize(&pool, no_auth, &url, Event::get())
+            .await
+            .expect("GET access should be authorized");
+        OPAService::authorize(&pool, no_auth, &url, Event::list())
+            .await
+            .expect("LIST access should be authorized");
+    }
+
+    #[sqlx::test]
+    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
+    async fn test_unauthorized(pool: PgPool) {
+        let no_auth: bool = testutils::rand::bool();
+        let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
+        if no_auth {
+            OPAService::authorize(&pool, no_auth, &url, Event::update())
+                .await
+                .expect("UPDATE access should be authorized");
+            OPAService::authorize(&pool, no_auth, &url, Event::delete())
+                .await
+                .expect("DELETE access should be authorized");
+        } else {
+            let result = OPAService::authorize(&pool, no_auth, &url, Event::update()).await;
+            assert!(matches!(result, Err(_)));
+            let result = OPAService::authorize(&pool, no_auth, &url, Event::delete()).await;
+            assert!(matches!(result, Err(_)));
         }
     }
 }

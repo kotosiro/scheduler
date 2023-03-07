@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
         cluster_gossip_addr = &conf.cluster_gossip_addr,
         cluster_gossip_bind = &conf.cluster_gossip_bind,
         mq_addr = &conf.mq_addr,
-        opa_addr = &conf.opa_addr.clone().map(|url| url.as_str().to_owned()),
+        opa_addr = &conf.opa_addr,
         no_auth = &conf.no_auth,
         use_json_log = &conf.use_json_log,
     );

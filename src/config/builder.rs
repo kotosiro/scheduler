@@ -65,6 +65,7 @@ mod tests {
         assert_eq!(&cluster_gossip_addr, &config.cluster_gossip_addr);
         assert_eq!(&cluster_gossip_bind, &config.cluster_gossip_bind);
         assert_eq!(&mq_addr, &config.mq_addr);
+        assert_eq!(&None, &config.opa_addr);
         assert_eq!(&no_auth, &config.no_auth);
         assert_eq!(&use_json_log, &config.use_json_log);
         assert_eq!(&log_filter, &config.log_filter);
@@ -103,6 +104,7 @@ mod tests {
         assert_eq!(&cluster_gossip_addr, &config.cluster_gossip_addr);
         assert_eq!(&cluster_gossip_bind, &config.cluster_gossip_bind);
         assert_eq!(&mq_addr, &config.mq_addr);
+        assert_eq!(&None, &config.opa_addr);
         assert_eq!(&no_auth, &config.no_auth);
         assert_eq!(&use_json_log, &config.use_json_log);
         assert_eq!(&log_filter, &config.log_filter);

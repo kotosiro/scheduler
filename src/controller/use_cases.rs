@@ -31,7 +31,8 @@ struct ResponseBody {
 async fn root(token: Token, Extension(state): Extension<SharedState>) -> impl IntoResponse {
     match OPAService::authorize(
         &state.controller.db_pool,
-        &state.controller.config,
+        state.controller.config.no_auth,
+        &state.controller.config.opa_addr,
         Event::get().with_token(token),
     )
     .await
