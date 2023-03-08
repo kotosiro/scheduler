@@ -15,6 +15,10 @@ macro_rules! impl_bool_property {
             pub fn as_bool(&self) -> &bool {
                 &self.value
             }
+
+            pub fn to_bool(&self) -> bool {
+                self.value
+            }
         }
     };
 }
@@ -32,6 +36,10 @@ macro_rules! impl_i32_property {
             pub fn as_i32(&self) -> &i32 {
                 &self.value
             }
+
+            pub fn to_i32(&self) -> i32 {
+                self.value
+            }
         }
     };
 }
@@ -48,6 +56,10 @@ macro_rules! impl_i64_property {
 
             pub fn as_i64(&self) -> &i64 {
                 &self.value
+            }
+
+            pub fn to_i64(&self) -> i64 {
+                self.value
             }
         }
     };
@@ -71,6 +83,10 @@ macro_rules! impl_string_property {
             pub fn as_str(&self) -> &str {
                 &self.value.as_str()
             }
+
+            pub fn to_string(&self) -> String {
+                self.value.as_str().to_string()
+            }
         }
     };
 }
@@ -85,6 +101,10 @@ macro_rules! impl_uuid_property {
 
             pub fn as_uuid(&self) -> &uuid::Uuid {
                 &self.value
+            }
+
+            pub fn to_uuid(&self) -> uuid::Uuid {
+                self.value.clone()
             }
         }
 
@@ -124,6 +144,10 @@ macro_rules! impl_json_property {
 
             pub fn as_json(&self) -> &serde_json::Value {
                 &self.value
+            }
+
+            pub fn to_json(&self) -> serde_json::Value {
+                self.value.clone()
             }
         }
 

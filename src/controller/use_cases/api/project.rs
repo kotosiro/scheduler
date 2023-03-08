@@ -44,8 +44,8 @@ pub async fn create(
         &state.controller.db_pool,
         state.controller.config.no_auth,
         &state.controller.config.opa_addr,
-        Event::get()
-            .on_project(Some(project.id().as_uuid().clone()))
+        Event::update()
+            .on_project(Some(project.id().to_uuid()))
             .with_token(token),
     )
     .await
@@ -63,7 +63,7 @@ pub async fn create(
             );
             if let Err(_) = ConfigService::publish(
                 &state.mq_chan,
-                ConfigUpdate::Project(project.id().as_uuid().clone()),
+                ConfigUpdate::Project(project.id().to_uuid()),
             )
             .await
             {

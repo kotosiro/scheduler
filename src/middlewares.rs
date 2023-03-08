@@ -1,5 +1,4 @@
 pub mod jwt;
-pub mod opa;
 pub mod postgres;
 pub mod rabbitmq;
 use crate::config::Config;
