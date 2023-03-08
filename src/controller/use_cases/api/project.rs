@@ -50,7 +50,7 @@ pub async fn create(
     )
     .await
     {
-        warn!("error updating project");
+        warn!("failed to update project");
         return Err(UseCaseError::Unauthorized);
     }
     let res = ProjectService::create(&state.controller.db_pool, &project).await;
@@ -67,7 +67,7 @@ pub async fn create(
             )
             .await
             {
-                warn!("error publish project update");
+                warn!("failed to publish project config update");
             }
             let body = Json(json!({
                 "id": project.id().as_uuid(),
@@ -77,7 +77,7 @@ pub async fn create(
             Ok((StatusCode::CREATED, body).into_response())
         }
         Err(e) if has_conflict(&e) => {
-            warn!("error updating project: {}", e);
+            warn!("failed to update project: {}", e);
             Err(UseCaseError::Conflict)
         }
         _ => Err(UseCaseError::InternalServerProblem(anyhow!(
