@@ -6,7 +6,7 @@ edition = "2021"
 rust-version = "1.67"
 
 [dependencies]
-anyhow = "1.0.69"
+anyhow = { version = "1.0.69", features = ["backtrace"] }
 async-trait = "0.1.64"
 axum = { version = "0.6.7", features = ["headers"] }
 clap = "4.1.4"

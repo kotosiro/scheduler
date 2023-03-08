@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use anyhow::Context;
 use anyhow::Result;
 use sqlx::postgres::PgDatabaseError;
@@ -27,12 +28,14 @@ pub async fn connect(url: &str) -> Result<PgPool> {
     Ok(pool)
 }
 
-pub fn error<T>(response: sqlx::Result<T>) -> Result<std::result::Result<T, Box<PgDatabaseError>>> {
+pub fn maybe_conflict<T>(
+    response: anyhow::Result<T>,
+) -> Result<std::result::Result<T, Box<PgDatabaseError>>> {
     match response {
         Ok(v) => Ok(Ok(v)),
-        Err(e) => match e {
-            sqlx::Error::Database(e) => Ok(Err(e.downcast::<PgDatabaseError>())),
-            e => Err(e.into()),
+        Err(e) => match e.downcast::<sqlx::Error>() {
+            Ok(sqlx::Error::Database(e)) => Ok(Err(e.downcast::<PgDatabaseError>())),
+            _ => Err(anyhow!("unknow database error")),
         },
     }
 }

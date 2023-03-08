@@ -136,13 +136,13 @@ impl Event {
         self
     }
 
-    async fn is_authorized(&self, url: &Option<String>) -> Result<bool> {
+    async fn is_authorized_by(&self, url: &Option<String>) -> Result<bool> {
         let opa = if let Some(opa) = url {
             opa
         } else {
             error!(
-            "OPA sidecar address is unset (to disable auth you must set `KOTOSIRO_NO_AUTH=true`)"
-        );
+		"OPA sidecar address is unset (to disable auth you must set `KOTOSIRO_NO_AUTH=true`)"
+            );
             return Ok(false);
         };
         let url = Url::parse(opa).context(format!(r#"failed to parse OPA url "{}""#, &opa))?;
@@ -188,7 +188,7 @@ impl OPAService for PgPool {
                 event.resource.project_id = project_id;
             }
         }
-        if event.is_authorized(url).await? {
+        if event.is_authorized_by(url).await? {
             Ok(())
         } else {
             Err(anyhow!(r#"failed to authorize event "{:?}""#, event))

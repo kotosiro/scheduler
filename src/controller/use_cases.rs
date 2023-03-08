@@ -8,11 +8,14 @@ use crate::messages::opa::Token;
 use anyhow::Context;
 use anyhow::Result;
 use axum::extract::Extension;
+use axum::http::StatusCode;
 use axum::middleware::from_extractor;
 use axum::routing::get;
+use axum::routing::post;
 use axum::Router;
-use axum::{response::IntoResponse, Json};
+use axum::{response::IntoResponse, response::Response, Json};
 use lapin::Channel;
+use serde_json::json;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -22,6 +25,41 @@ pub struct State {
 }
 
 type SharedState = Arc<State>;
+
+pub enum UseCaseError {
+    InternalServerProblem(anyhow::Error),
+    BadRequest,
+    Unauthorized,
+    ValidationFailed,
+    Conflict,
+}
+
+impl From<anyhow::Error> for UseCaseError {
+    fn from(e: anyhow::Error) -> Self {
+        UseCaseError::InternalServerProblem(e)
+    }
+}
+
+impl IntoResponse for UseCaseError {
+    fn into_response(self) -> Response {
+        let (status, message) = match self {
+            UseCaseError::InternalServerProblem(e) => {
+                debug!("stacktrace: {}", e.backtrace());
+                (StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong")
+            }
+            UseCaseError::BadRequest => (StatusCode::BAD_REQUEST, "Bad request"),
+            UseCaseError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized"),
+            UseCaseError::ValidationFailed => {
+                (StatusCode::UNPROCESSABLE_ENTITY, "Validation errors")
+            }
+            UseCaseError::Conflict => (StatusCode::CONFLICT, "Confliction occured"),
+        };
+        let body = Json(json!({
+            "error": message,
+        }));
+        (status, body).into_response()
+    }
+}
 
 #[derive(Debug, serde::Serialize)]
 struct ResponseBody {
@@ -60,6 +98,10 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
         .context("failed to setup config service")?;
     let app = Router::new()
         .route("/", get(root))
+        .route(
+            "/api/project",
+            post(crate::controller::use_cases::api::project::create),
+        )
         .layer(Extension(state))
         .layer(from_extractor::<Token>());
     Ok(app)
