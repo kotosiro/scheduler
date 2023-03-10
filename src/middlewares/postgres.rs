@@ -28,7 +28,7 @@ pub async fn connect(url: &str) -> Result<PgPool> {
     Ok(pool)
 }
 
-pub fn maybe_conflict<T>(
+pub fn pg_error<T>(
     response: anyhow::Result<T>,
 ) -> Result<std::result::Result<T, Box<PgDatabaseError>>> {
     match response {

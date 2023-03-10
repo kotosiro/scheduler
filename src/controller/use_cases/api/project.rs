@@ -1,5 +1,7 @@
 use crate::controller::domain::entities::project::Project;
+use crate::controller::domain::entities::project::ProjectId;
 use crate::controller::domain::entities::project::ProjectName;
+use crate::controller::domain::entities::workflow::WorkflowName;
 use crate::controller::services::config::ConfigService;
 use crate::controller::services::opa::Event;
 use crate::controller::services::opa::OPAService;
@@ -9,10 +11,11 @@ use crate::controller::use_cases::UseCaseError;
 use crate::messages::config::ConfigUpdate;
 use crate::messages::opa::Token;
 use crate::middlewares::postgres::has_conflict;
-use crate::middlewares::postgres::maybe_conflict;
+use crate::middlewares::postgres::pg_error;
 use anyhow::anyhow;
 use axum::extract::Extension;
 use axum::extract::Json;
+use axum::extract::Path;
 use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -23,6 +26,18 @@ use tracing::error;
 use tracing::info;
 use tracing::warn;
 use uuid::Uuid;
+
+#[derive(serde::Deserialize)]
+pub struct GetByNameQuery {
+    name: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ListWorkflowsByIdQuery {
+    name: Option<String>,
+    after: Option<String>,
+    limit: Option<i64>,
+}
 
 pub async fn create(
     token: Token,
@@ -56,7 +71,7 @@ pub async fn create(
         warn!("failed to update project");
         return Err(UseCaseError::Unauthorized);
     }
-    match maybe_conflict(ProjectService::create(&state.controller.db_pool, &project).await)? {
+    match pg_error(ProjectService::create(&state.controller.db_pool, &project).await)? {
         Ok(_) => {
             info!(
                 r#"updated project id: "{}" name: "{}""#,
@@ -86,11 +101,6 @@ pub async fn create(
             "Internal server error"
         ))),
     }
-}
-
-#[derive(serde::Deserialize)]
-pub struct GetByNameQuery {
-    name: Option<String>,
 }
 
 pub async fn get_by_name(
@@ -159,4 +169,139 @@ pub async fn get_by_name(
         ));
         Ok((StatusCode::OK, body).into_response())
     }
+}
+
+pub async fn get_summary_by_id(
+    token: Token,
+    Extension(state): Extension<SharedState>,
+    Path(id): Path<Uuid>,
+) -> Result<Response, UseCaseError> {
+    let id = ProjectId::new(id);
+    match ProjectService::get_summary_by_id(&state.controller.db_pool, &id).await? {
+        None => Ok(StatusCode::NOT_FOUND.into_response()),
+        Some(row) => {
+            if let Err(_) = OPAService::authorize(
+                &state.controller.db_pool,
+                &state.controller.config.no_auth,
+                &state.controller.config.opa_addr,
+                Event::get().on_project(Some(row.id)).with_token(token),
+            )
+            .await
+            {
+                warn!("failed to get project");
+                return Err(UseCaseError::Unauthorized);
+            }
+            let body = Json(json!({
+                "id": row.id,
+                "name": row.name,
+                "description": row.description,
+                "workflows": row.workflows,
+                "running_jobs": row.running_jobs,
+                "waiting_jobs": row.waiting_jobs,
+                "fails_last_hour": row.fails_last_hour,
+                "successes_last_hour": row.successes_last_hour,
+                "errors_last_hour": row.errors_last_hour,
+            }));
+            Ok((StatusCode::OK, body).into_response())
+        }
+    }
+}
+
+pub async fn delete(
+    token: Token,
+    Extension(state): Extension<SharedState>,
+    Path(id): Path<Uuid>,
+) -> Result<Response, UseCaseError> {
+    let id = ProjectId::new(id);
+    if let Err(_) = OPAService::authorize(
+        &state.controller.db_pool,
+        &state.controller.config.no_auth,
+        &state.controller.config.opa_addr,
+        Event::delete()
+            .on_project(Some(id.to_uuid()))
+            .with_token(token),
+    )
+    .await
+    {
+        warn!("failed to delete project");
+        return Err(UseCaseError::Unauthorized);
+    }
+    match pg_error(ProjectService::delete(&state.controller.db_pool, &id).await)? {
+        Ok(done) => {
+            if done.rows_affected() == 1 {
+                info!(r#"deleted project id: "{}""#, id.as_uuid());
+                Ok(StatusCode::NO_CONTENT.into_response())
+            } else {
+                info!(r#"no project was found with id: "{}""#, id.as_uuid());
+                Ok(StatusCode::NOT_FOUND.into_response())
+            }
+        }
+        Err(e) => {
+            warn!("failed to delete project: {}", e);
+            Err(UseCaseError::InternalServerProblem(anyhow!(
+                "Internal server error"
+            )))
+        }
+    }
+}
+
+pub async fn list_workflows_by_id(
+    token: Token,
+    Extension(state): Extension<SharedState>,
+    Path(id): Path<Uuid>,
+    query: Query<ListWorkflowsByIdQuery>,
+) -> Result<Response, UseCaseError> {
+    let id = ProjectId::new(id);
+    let name = &query
+        .name
+        .as_ref()
+        .map(WorkflowName::new)
+        .transpose()
+        .unwrap_or(None);
+    let after = &query
+        .after
+        .as_ref()
+        .map(WorkflowName::new)
+        .transpose()
+        .unwrap_or(None);
+    let limit = query.limit;
+    if let Err(_) = OPAService::authorize(
+        &state.controller.db_pool,
+        &state.controller.config.no_auth,
+        &state.controller.config.opa_addr,
+        Event::list()
+            .on_project(Some(id.to_uuid()))
+            .with_token(token),
+    )
+    .await
+    {
+        warn!("failed to list project workflows");
+        return Err(UseCaseError::Unauthorized);
+    }
+    let rows = ProjectService::list_workflows_by_id(
+        &state.controller.db_pool,
+        &id,
+        Option::from(name),
+        Option::from(after),
+        limit,
+    )
+    .await?;
+    let body: Json<Value> = Json(Value::Array(
+        rows.into_iter()
+            .map(|row| {
+                json!({
+                    "id": row.id,
+                    "name": row.name,
+                    "description": row.description,
+                    "paused": row.paused,
+                    "success": row.success,
+                    "running": row.running,
+                    "failure": row.failure,
+                    "waiting": row.waiting,
+                    "error": row.error,
+                })
+            })
+            .collect(),
+    ));
+    Ok((StatusCode::OK, body).into_response())
 }

@@ -10,6 +10,7 @@ use axum::http::StatusCode;
 use axum::middleware::from_extractor;
 use axum::response::IntoResponse;
 use axum::response::Response;
+use axum::routing::delete;
 use axum::routing::get;
 use axum::routing::post;
 use axum::routing::put;
@@ -81,6 +82,14 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
             get(self::api::project::get_by_name)
                 .post(self::api::project::create)
                 .put(self::api::project::create),
+        )
+        .route(
+            "/api/project/:id",
+            get(self::api::project::get_summary_by_id).delete(self::api::project::delete),
+        )
+        .route(
+            "/api/project/:id/workflow",
+            get(self::api::project::list_workflows_by_id),
         )
         .layer(Extension(state))
         .layer(from_extractor::<Token>());
