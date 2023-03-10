@@ -44,7 +44,7 @@ pub async fn create(
     };
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
-        state.controller.config.no_auth,
+        &state.controller.config.no_auth,
         &state.controller.config.opa_addr,
         Event::update()
             .on_project(Some(project.id().to_uuid()))
@@ -106,12 +106,12 @@ pub async fn get_by_name(
         };
         match ProjectService::get_by_name(&state.controller.db_pool, &name).await? {
             None => Ok(StatusCode::NOT_FOUND.into_response()),
-            Some(project) => {
+            Some(row) => {
                 if let Err(_) = OPAService::authorize(
                     &state.controller.db_pool,
-                    state.controller.config.no_auth,
+                    &state.controller.config.no_auth,
                     &state.controller.config.opa_addr,
-                    Event::get().on_project(Some(project.id)).with_token(token),
+                    Event::get().on_project(Some(row.id)).with_token(token),
                 )
                 .await
                 {
@@ -119,12 +119,12 @@ pub async fn get_by_name(
                     return Err(UseCaseError::Unauthorized);
                 }
                 let body = Json(json!({
-                    "id": project.id,
-                    "name": project.name,
-                    "description": project.description,
-                    "config": project.config,
-                    "created_at": project.created_at,
-                    "updated_at": project.updated_at,
+                    "id": row.id,
+                    "name": row.name,
+                    "description": row.description,
+                    "config": row.config,
+                    "created_at": row.created_at,
+                    "updated_at": row.updated_at,
                 }));
                 Ok((StatusCode::OK, body).into_response())
             }
@@ -132,7 +132,7 @@ pub async fn get_by_name(
     } else {
         if let Err(_) = OPAService::authorize(
             &state.controller.db_pool,
-            state.controller.config.no_auth,
+            &state.controller.config.no_auth,
             &state.controller.config.opa_addr,
             Event::list().with_token(token),
         )
@@ -141,18 +141,17 @@ pub async fn get_by_name(
             warn!("failed to list project");
             return Err(UseCaseError::Unauthorized);
         }
-        let projects = ProjectService::list(&state.controller.db_pool, None).await?;
+        let rows = ProjectService::list(&state.controller.db_pool, None).await?;
         let body: Json<Value> = Json(Value::Array(
-            projects
-                .into_iter()
-                .map(|p| {
+            rows.into_iter()
+                .map(|row| {
                     json!({
-                        "id": p.id,
-                        "name": p.name,
-                        "description": p.description,
-                        "config": p.config,
-                        "created_at": p.created_at,
-                        "updated_at": p.updated_at,
+                        "id": row.id,
+                        "name": row.name,
+                        "description": row.description,
+                        "config": row.config,
+                        "created_at": row.created_at,
+                        "updated_at": row.updated_at,
                     })
                 })
                 .collect(),

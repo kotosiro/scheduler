@@ -171,13 +171,19 @@ impl Event {
 
 #[async_trait]
 pub trait OPAService {
-    async fn authorize(&self, no_auth: bool, url: &Option<String>, mut event: Event) -> Result<()>;
+    async fn authorize(&self, no_auth: &bool, url: &Option<String>, mut event: Event)
+        -> Result<()>;
 }
 
 #[async_trait]
 impl OPAService for PgPool {
-    async fn authorize(&self, no_auth: bool, url: &Option<String>, mut event: Event) -> Result<()> {
-        if no_auth {
+    async fn authorize(
+        &self,
+        no_auth: &bool,
+        url: &Option<String>,
+        mut event: Event,
+    ) -> Result<()> {
+        if *no_auth {
             return Ok(());
         }
         let repo = PgWorkflowRepository;
@@ -205,10 +211,10 @@ mod tests {
     async fn test_authorized(pool: PgPool) {
         let no_auth: bool = testutils::rand::bool();
         let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
-        OPAService::authorize(&pool, no_auth, &url, Event::get())
+        OPAService::authorize(&pool, &no_auth, &url, Event::get())
             .await
             .expect("GET access should be authorized");
-        OPAService::authorize(&pool, no_auth, &url, Event::list())
+        OPAService::authorize(&pool, &no_auth, &url, Event::list())
             .await
             .expect("LIST access should be authorized");
     }
@@ -219,16 +225,16 @@ mod tests {
         let no_auth: bool = testutils::rand::bool();
         let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
         if no_auth {
-            OPAService::authorize(&pool, no_auth, &url, Event::update())
+            OPAService::authorize(&pool, &no_auth, &url, Event::update())
                 .await
                 .expect("UPDATE access should be authorized");
-            OPAService::authorize(&pool, no_auth, &url, Event::delete())
+            OPAService::authorize(&pool, &no_auth, &url, Event::delete())
                 .await
                 .expect("DELETE access should be authorized");
         } else {
-            let result = OPAService::authorize(&pool, no_auth, &url, Event::update()).await;
+            let result = OPAService::authorize(&pool, &no_auth, &url, Event::update()).await;
             assert!(matches!(result, Err(_)));
-            let result = OPAService::authorize(&pool, no_auth, &url, Event::delete()).await;
+            let result = OPAService::authorize(&pool, &no_auth, &url, Event::delete()).await;
             assert!(matches!(result, Err(_)));
         }
     }
