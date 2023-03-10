@@ -1,8 +1,6 @@
 pub mod api;
 pub mod internal;
 use crate::controller::services::config::ConfigService;
-use crate::controller::services::opa::Event;
-use crate::controller::services::opa::OPAService;
 use crate::controller::Controller;
 use crate::messages::opa::Token;
 use anyhow::Context;
@@ -10,10 +8,13 @@ use anyhow::Result;
 use axum::extract::Extension;
 use axum::http::StatusCode;
 use axum::middleware::from_extractor;
+use axum::response::IntoResponse;
+use axum::response::Response;
 use axum::routing::get;
 use axum::routing::post;
+use axum::routing::put;
+use axum::Json;
 use axum::Router;
-use axum::{response::IntoResponse, response::Response, Json};
 use lapin::Channel;
 use serde_json::json;
 use std::sync::Arc;
@@ -61,28 +62,6 @@ impl IntoResponse for UseCaseError {
     }
 }
 
-#[derive(Debug, serde::Serialize)]
-struct ResponseBody {
-    message: String,
-}
-
-async fn root(token: Token, Extension(state): Extension<SharedState>) -> impl IntoResponse {
-    match OPAService::authorize(
-        &state.controller.db_pool,
-        state.controller.config.no_auth,
-        &state.controller.config.opa_addr,
-        Event::get().with_token(token),
-    )
-    .await
-    {
-        Ok(_) => debug!("authorized"),
-        Err(e) => debug!(?e),
-    }
-    let msg = format!("{:?}", &state.controller.config);
-    let response = ResponseBody { message: msg };
-    Json(response)
-}
-
 async fn route(controller: Arc<Controller>) -> Result<Router> {
     let mq_chan = controller
         .mq_conn
@@ -97,10 +76,11 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
         .await
         .context("failed to setup config service")?;
     let app = Router::new()
-        .route("/", get(root))
         .route(
             "/api/project",
-            post(crate::controller::use_cases::api::project::create),
+            get(crate::controller::use_cases::api::project::get_by_name)
+                .post(crate::controller::use_cases::api::project::create)
+                .put(crate::controller::use_cases::api::project::create),
         )
         .layer(Extension(state))
         .layer(from_extractor::<Token>());
