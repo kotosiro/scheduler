@@ -16,6 +16,7 @@ use axum::extract::Json;
 use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use axum::response::Response;
 use serde_json::json;
 use serde_json::Value;
 use tracing::error;
@@ -27,7 +28,7 @@ pub async fn create(
     token: Token,
     Extension(state): Extension<SharedState>,
     Json(payload): Json<Value>,
-) -> Result<impl IntoResponse, UseCaseError> {
+) -> Result<Response, UseCaseError> {
     let project = if let Ok(project) = Project::new(
         payload["id"]
             .as_str()
@@ -96,7 +97,7 @@ pub async fn get_by_name(
     token: Token,
     Extension(state): Extension<SharedState>,
     query: Query<GetByNameQuery>,
-) -> Result<impl IntoResponse, UseCaseError> {
+) -> Result<Response, UseCaseError> {
     if let Some(name) = &query.name {
         let name = if let Ok(name) = ProjectName::new(name) {
             name
