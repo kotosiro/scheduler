@@ -1,11 +1,26 @@
-use crate::controller::domain::dtos::job::Job as JobRow;
 use crate::controller::domain::entities::job::Job;
 use crate::controller::domain::entities::job::JobId;
 use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::DateTime;
+use chrono::Utc;
 use sqlx::postgres::PgQueryResult;
+use uuid::Uuid;
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct JobRow {
+    pub id: Uuid,
+    pub name: String,
+    pub workflow_id: Uuid,
+    pub threshold: i32,
+    pub image: String,
+    pub args: Vec<String>,
+    pub envs: Vec<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 #[async_trait]
 pub trait JobRepository: Send + Sync + 'static {

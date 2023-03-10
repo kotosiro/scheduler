@@ -1,7 +1,3 @@
-use crate::controller::domain::dtos::project::Project as ProjectRow;
-use crate::controller::domain::dtos::project::ProjectConfig as ProjectConfigRow;
-use crate::controller::domain::dtos::project::ProjectSummary as ProjectSummaryRow;
-use crate::controller::domain::dtos::workflow::WorkflowSummary as WorkflowSummaryRow;
 use crate::controller::domain::entities::project::Project;
 use crate::controller::domain::entities::project::ProjectId;
 use crate::controller::domain::entities::project::ProjectName;
@@ -10,7 +6,51 @@ use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::DateTime;
+use chrono::Utc;
+use serde_json::Value as Json;
 use sqlx::postgres::PgQueryResult;
+use uuid::Uuid;
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct ProjectRow {
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub config: Option<Json>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+#[serde(transparent)]
+pub struct ProjectConfigRow(pub Json);
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct ProjectSummaryRow {
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub workflows: i64,
+    pub running_jobs: i64,
+    pub waiting_jobs: i64,
+    pub fails_last_hour: i64,
+    pub successes_last_hour: i64,
+    pub errors_last_hour: i64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct WorkflowSummaryRow {
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub paused: bool,
+    pub success: i64,
+    pub running: i64,
+    pub failure: i64,
+    pub waiting: i64,
+    pub error: i64,
+}
 
 #[async_trait]
 pub trait ProjectRepository: Send + Sync + 'static {

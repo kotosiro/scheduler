@@ -78,9 +78,9 @@ async fn route(controller: Arc<Controller>) -> Result<Router> {
     let app = Router::new()
         .route(
             "/api/project",
-            get(crate::controller::use_cases::api::project::get_by_name)
-                .post(crate::controller::use_cases::api::project::create)
-                .put(crate::controller::use_cases::api::project::create),
+            get(self::api::project::get_by_name)
+                .post(self::api::project::create)
+                .put(self::api::project::create),
         )
         .layer(Extension(state))
         .layer(from_extractor::<Token>());

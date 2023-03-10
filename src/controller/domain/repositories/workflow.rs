@@ -1,12 +1,24 @@
-use crate::controller::domain::dtos::workflow::Workflow as WorkflowRow;
 use crate::controller::domain::entities::workflow::Workflow;
 use crate::controller::domain::entities::workflow::WorkflowId;
 use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::DateTime;
+use chrono::Utc;
 use sqlx::postgres::PgQueryResult;
 use uuid::Uuid;
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct WorkflowRow {
+    pub id: Uuid,
+    pub name: String,
+    pub project_id: Uuid,
+    pub description: String,
+    pub paused: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 #[async_trait]
 pub trait WorkflowRepository: Send + Sync + 'static {

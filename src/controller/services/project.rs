@@ -1,13 +1,13 @@
-use crate::controller::domain::dtos::project::Project as ProjectRow;
-use crate::controller::domain::dtos::project::ProjectConfig as ProjectConfigRow;
-use crate::controller::domain::dtos::project::ProjectSummary as ProjectSummaryRow;
-use crate::controller::domain::dtos::workflow::WorkflowSummary as WorkflowSummaryRow;
 use crate::controller::domain::entities::project::Project;
 use crate::controller::domain::entities::project::ProjectId;
 use crate::controller::domain::entities::project::ProjectName;
 use crate::controller::domain::entities::workflow::WorkflowName;
 use crate::controller::domain::repositories::project::PgProjectRepository;
+use crate::controller::domain::repositories::project::ProjectConfigRow;
 use crate::controller::domain::repositories::project::ProjectRepository;
+use crate::controller::domain::repositories::project::ProjectRow;
+use crate::controller::domain::repositories::project::ProjectSummaryRow;
+use crate::controller::domain::repositories::project::WorkflowSummaryRow;
 use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::postgres::PgQueryResult;

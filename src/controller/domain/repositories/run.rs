@@ -1,11 +1,26 @@
-use crate::controller::domain::dtos::run::Run as RunRow;
 use crate::controller::domain::entities::run::Run;
 use crate::controller::domain::entities::run::RunId;
 use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::DateTime;
+use chrono::Utc;
 use sqlx::postgres::PgQueryResult;
+use uuid::Uuid;
+
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct RunRow {
+    pub id: Uuid,
+    pub state: String,
+    pub priority: String,
+    pub job_id: Uuid,
+    pub triggered_at: DateTime<Utc>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub finished_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
 
 #[async_trait]
 pub trait RunRepository: Send + Sync + 'static {
