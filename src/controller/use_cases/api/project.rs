@@ -170,8 +170,8 @@ pub async fn get_summary_by_id(
     let id = if let Ok(id) = ProjectId::try_from(id) {
         id
     } else {
-        error!("invalid project id found");
-        return Err(UseCaseError::ValidationFailed);
+        error!("project id must be uuid v4");
+        return Err(UseCaseError::BadRequest);
     };
     match ProjectService::get_summary_by_id(&state.controller.db_pool, &id).await? {
         None => Ok(StatusCode::NOT_FOUND.into_response()),
@@ -211,8 +211,8 @@ pub async fn delete(
     let id = if let Ok(id) = ProjectId::try_from(id) {
         id
     } else {
-        error!("invalid project id found");
-        return Err(UseCaseError::ValidationFailed);
+        error!("project id must be uuid v4");
+        return Err(UseCaseError::BadRequest);
     };
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
@@ -255,8 +255,8 @@ pub async fn list_workflows_by_id(
     let id = if let Ok(id) = ProjectId::try_from(id) {
         id
     } else {
-        error!("invalid project id found");
-        return Err(UseCaseError::ValidationFailed);
+        error!("project id must be uuid v4");
+        return Err(UseCaseError::BadRequest);
     };
     let name = &query
         .name
