@@ -334,5 +334,27 @@ macro_rules! impl_json_property {
                 Ok(Self { value })
             }
         }
+
+        impl sqlx::types::Type<sqlx::postgres::Postgres> for $type {
+            fn type_info() -> sqlx::postgres::PgTypeInfo {
+                <serde_json::Value as sqlx::types::Type<sqlx::postgres::Postgres>>::type_info()
+            }
+
+            fn compatible(ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                <serde_json::Value as sqlx::types::Type<sqlx::postgres::Postgres>>::compatible(ty)
+            }
+        }
+
+        impl sqlx::encode::Encode<'_, sqlx::postgres::Postgres> for $type {
+            fn encode_by_ref(
+                &self,
+                buf: &mut sqlx::postgres::PgArgumentBuffer,
+            ) -> sqlx::encode::IsNull {
+                <serde_json::Value as sqlx::encode::Encode<sqlx::postgres::Postgres>>::encode_by_ref(
+                    &self.value,
+                    buf,
+                )
+            }
+        }
     };
 }

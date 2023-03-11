@@ -135,7 +135,7 @@ impl ProjectRepository for PgProjectRepository {
         .bind(project.id())
         .bind(project.name())
         .bind(project.description())
-        .bind(project.config().as_ref().map(|config| config.as_json()))
+        .bind(project.config())
         .execute(&mut *conn)
         .await
         .context(format!(
