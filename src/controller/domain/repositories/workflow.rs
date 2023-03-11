@@ -79,7 +79,7 @@ impl WorkflowRepository for PgWorkflowRepository {
         .bind(workflow.name())
         .bind(workflow.project_id())
         .bind(workflow.description())
-        .bind(workflow.paused().as_bool())
+        .bind(workflow.paused())
         .execute(&mut *conn)
         .await
         .context(format!(
