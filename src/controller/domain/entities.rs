@@ -88,6 +88,38 @@ macro_rules! impl_string_property {
                 self.value.as_str().to_string()
             }
         }
+
+        impl sqlx::types::Type<sqlx::postgres::Postgres> for $type {
+            fn type_info() -> sqlx::postgres::PgTypeInfo {
+                <String as sqlx::types::Type<sqlx::postgres::Postgres>>::type_info()
+            }
+
+            fn compatible(ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                <String as sqlx::types::Type<sqlx::postgres::Postgres>>::compatible(ty)
+            }
+        }
+
+        impl sqlx::postgres::PgHasArrayType for $type {
+            fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+                <String as sqlx::postgres::PgHasArrayType>::array_type_info()
+            }
+
+            fn array_compatible(ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                <String as sqlx::postgres::PgHasArrayType>::array_compatible(ty)
+            }
+        }
+
+        impl sqlx::encode::Encode<'_, sqlx::postgres::Postgres> for $type {
+            fn encode_by_ref(
+                &self,
+                buf: &mut sqlx::postgres::PgArgumentBuffer,
+            ) -> sqlx::encode::IsNull {
+                <String as sqlx::encode::Encode<sqlx::postgres::Postgres>>::encode_by_ref(
+                    &self.value,
+                    buf,
+                )
+            }
+        }
     };
 }
 

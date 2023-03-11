@@ -68,7 +68,7 @@ pub trait ProjectRepository: Send + Sync + 'static {
 
     async fn list(
         &self,
-        limit: Option<i64>,
+        limit: Option<&i64>,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Vec<ProjectRow>>;
 
@@ -101,7 +101,7 @@ pub trait ProjectRepository: Send + Sync + 'static {
         id: &ProjectId,
         name: Option<&WorkflowName>,
         after: Option<&WorkflowName>,
-        limit: Option<i64>,
+        limit: Option<&i64>,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Vec<WorkflowSummaryRow>>;
 }
@@ -133,8 +133,8 @@ impl ProjectRepository for PgProjectRepository {
                  config = COALESCE($4, project.config)",
         )
         .bind(project.id().as_uuid())
-        .bind(project.name().as_str())
-        .bind(project.description().as_str())
+        .bind(project.name())
+        .bind(project.description())
         .bind(project.config().as_ref().map(|config| config.as_json()))
         .execute(&mut *conn)
         .await
@@ -168,7 +168,7 @@ impl ProjectRepository for PgProjectRepository {
 
     async fn list(
         &self,
-        limit: Option<i64>,
+        limit: Option<&i64>,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Vec<ProjectRow>> {
         let mut conn = executor
@@ -187,12 +187,12 @@ impl ProjectRepository for PgProjectRepository {
              ORDER BY name
              LIMIT $1",
         )
-        .bind(limit.unwrap_or(100))
+        .bind(limit.unwrap_or(&100))
         .fetch_all(&mut *conn)
         .await
         .context(format!(
             "failed to list {} project(s) from [project]",
-            limit.unwrap_or(100)
+            limit.unwrap_or(&100)
         ))?;
         Ok(rows)
     }
@@ -247,7 +247,7 @@ impl ProjectRepository for PgProjectRepository {
              FROM project
              WHERE name = $1",
         )
-        .bind(name.as_str())
+        .bind(name)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
@@ -353,7 +353,7 @@ impl ProjectRepository for PgProjectRepository {
         id: &ProjectId,
         name: Option<&WorkflowName>,
         after: Option<&WorkflowName>,
-        limit: Option<i64>,
+        limit: Option<&i64>,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<Vec<WorkflowSummaryRow>> {
         let mut conn = executor
@@ -407,14 +407,14 @@ impl ProjectRepository for PgProjectRepository {
              LIMIT $4",
         )
         .bind(id.as_uuid())
-        .bind(name.map(|n| n.as_str()))
-        .bind(after.map(|n| n.as_str()))
-        .bind(limit.unwrap_or(100))
+        .bind(name)
+        .bind(after)
+        .bind(limit.unwrap_or(&100))
         .fetch_all(&mut *conn)
         .await
         .context(format!(
             r#"failed to list {} workflow summary(ies) of "{}" from [project]"#,
-            limit.unwrap_or(100),
+            limit.unwrap_or(&100),
             id.as_uuid()
         ))?;
         Ok(rows)
@@ -636,7 +636,7 @@ mod tests {
         }
         let limit = testutils::rand::i64(0, 200);
         let fetched = repo
-            .list(Some(limit.into()), &mut tx)
+            .list(Some(&limit), &mut tx)
             .await
             .expect("inserted project should be listed");
         assert_eq!(min(records, limit) as usize, fetched.len());

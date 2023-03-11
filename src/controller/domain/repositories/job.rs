@@ -74,22 +74,12 @@ impl JobRepository for PgJobRepository {
                  envs = $7",
         )
         .bind(job.id().as_uuid())
-        .bind(job.name().as_str())
+        .bind(job.name())
         .bind(job.workflow_id().as_uuid())
         .bind(job.threshold().as_i32())
-        .bind(job.image().as_str())
-        .bind(
-            job.args()
-                .into_iter()
-                .map(|a| a.as_str())
-                .collect::<Vec<_>>(),
-        )
-        .bind(
-            job.envs()
-                .into_iter()
-                .map(|e| e.as_str())
-                .collect::<Vec<_>>(),
-        )
+        .bind(job.image())
+        .bind(job.args())
+        .bind(job.envs())
         .execute(&mut *conn)
         .await
         .context(format!(

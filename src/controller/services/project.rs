@@ -19,7 +19,7 @@ pub trait ProjectService {
 
     async fn delete(&self, id: &ProjectId) -> Result<PgQueryResult>;
 
-    async fn list(&self, limit: Option<i64>) -> Result<Vec<ProjectRow>>;
+    async fn list(&self, limit: Option<&i64>) -> Result<Vec<ProjectRow>>;
 
     async fn get_by_id(&self, id: &ProjectId) -> Result<Option<ProjectRow>>;
 
@@ -34,7 +34,7 @@ pub trait ProjectService {
         id: &ProjectId,
         name: Option<&WorkflowName>,
         after: Option<&WorkflowName>,
-        limit: Option<i64>,
+        limit: Option<&i64>,
     ) -> Result<Vec<WorkflowSummaryRow>>;
 }
 
@@ -50,7 +50,7 @@ impl ProjectService for PgPool {
         repo.delete(id, self).await
     }
 
-    async fn list(&self, limit: Option<i64>) -> Result<Vec<ProjectRow>> {
+    async fn list(&self, limit: Option<&i64>) -> Result<Vec<ProjectRow>> {
         let repo = PgProjectRepository;
         repo.list(limit, self).await
     }
@@ -80,7 +80,7 @@ impl ProjectService for PgPool {
         id: &ProjectId,
         name: Option<&WorkflowName>,
         after: Option<&WorkflowName>,
-        limit: Option<i64>,
+        limit: Option<&i64>,
     ) -> Result<Vec<WorkflowSummaryRow>> {
         let repo = PgProjectRepository;
         repo.list_workflows_by_id(id, name, after, limit, self)

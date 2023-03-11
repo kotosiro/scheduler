@@ -264,7 +264,7 @@ pub async fn list_workflows_by_id(
         .map(WorkflowName::new)
         .transpose()
         .unwrap_or(None);
-    let limit = query.limit;
+    let limit = &query.limit;
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
         &state.controller.config.no_auth,
@@ -283,7 +283,7 @@ pub async fn list_workflows_by_id(
         &id,
         Option::from(name),
         Option::from(after),
-        limit,
+        Option::from(limit),
     )
     .await?;
     let body: Json<Value> = Json(Value::Array(

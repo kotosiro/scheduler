@@ -76,9 +76,9 @@ impl WorkflowRepository for PgWorkflowRepository {
                  paused = $5",
         )
         .bind(workflow.id().as_uuid())
-        .bind(workflow.name().as_str())
+        .bind(workflow.name())
         .bind(workflow.project_id().as_uuid())
-        .bind(workflow.description().as_str())
+        .bind(workflow.description())
         .bind(workflow.paused().as_bool())
         .execute(&mut *conn)
         .await
