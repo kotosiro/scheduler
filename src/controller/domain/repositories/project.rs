@@ -132,7 +132,7 @@ impl ProjectRepository for PgProjectRepository {
                  description = $3,
                  config = COALESCE($4, project.config)",
         )
-        .bind(project.id().as_uuid())
+        .bind(project.id())
         .bind(project.name())
         .bind(project.description())
         .bind(project.config().as_ref().map(|config| config.as_json()))
@@ -157,7 +157,7 @@ impl ProjectRepository for PgProjectRepository {
             "DELETE FROM project
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .execute(&mut *conn)
         .await
         .context(format!(
@@ -217,7 +217,7 @@ impl ProjectRepository for PgProjectRepository {
              FROM project
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
@@ -314,7 +314,7 @@ impl ProjectRepository for PgProjectRepository {
              FROM project
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
@@ -338,7 +338,7 @@ impl ProjectRepository for PgProjectRepository {
              FROM project
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
@@ -406,7 +406,7 @@ impl ProjectRepository for PgProjectRepository {
              ORDER BY name
              LIMIT $4",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .bind(name)
         .bind(after)
         .bind(limit.unwrap_or(&100))

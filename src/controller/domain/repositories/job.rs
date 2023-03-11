@@ -73,9 +73,9 @@ impl JobRepository for PgJobRepository {
                  args = $6,
                  envs = $7",
         )
-        .bind(job.id().as_uuid())
+        .bind(job.id())
         .bind(job.name())
-        .bind(job.workflow_id().as_uuid())
+        .bind(job.workflow_id())
         .bind(job.threshold().as_i32())
         .bind(job.image())
         .bind(job.args())
@@ -101,7 +101,7 @@ impl JobRepository for PgJobRepository {
             "DELETE FROM job
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .execute(&mut *conn)
         .await
         .context(format!(r#"failed to delete "{}" from [job]"#, id.as_uuid()))
@@ -130,7 +130,7 @@ impl JobRepository for PgJobRepository {
              FROM job
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(r#"failed to select "{}" from [job]"#, id.as_uuid()))?;

@@ -67,10 +67,10 @@ impl RunRepository for PgRunRepository {
                  finished_at
              ) VALUES ($1, $2, $3, $4, $5, NULL, NULL)",
         )
-        .bind(run.id().as_uuid())
+        .bind(run.id())
         .bind(run.state())
         .bind(run.priority())
-        .bind(run.job_id().as_uuid())
+        .bind(run.job_id())
         .bind(run.triggered_at())
         .execute(&mut *conn)
         .await
@@ -93,7 +93,7 @@ impl RunRepository for PgRunRepository {
             "DELETE FROM run
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .execute(&mut *conn)
         .await
         .context(format!(r#"failed to delete "{}" from [run]"#, id.as_uuid()))
@@ -122,7 +122,7 @@ impl RunRepository for PgRunRepository {
              FROM run
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(r#"failed to select "{}" from [run]"#, id.as_uuid()))?;

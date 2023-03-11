@@ -75,9 +75,9 @@ impl WorkflowRepository for PgWorkflowRepository {
                  description = $4,
                  paused = $5",
         )
-        .bind(workflow.id().as_uuid())
+        .bind(workflow.id())
         .bind(workflow.name())
-        .bind(workflow.project_id().as_uuid())
+        .bind(workflow.project_id())
         .bind(workflow.description())
         .bind(workflow.paused().as_bool())
         .execute(&mut *conn)
@@ -101,7 +101,7 @@ impl WorkflowRepository for PgWorkflowRepository {
             "DELETE FROM workflow
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .execute(&mut *conn)
         .await
         .context(format!(
@@ -131,7 +131,7 @@ impl WorkflowRepository for PgWorkflowRepository {
              FROM workflow
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
@@ -156,7 +156,7 @@ impl WorkflowRepository for PgWorkflowRepository {
              FROM workflow
              WHERE id = $1",
         )
-        .bind(id.as_uuid())
+        .bind(id)
         .fetch_optional(&mut *conn)
         .await
         .context(format!(
