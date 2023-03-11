@@ -166,9 +166,7 @@ impl WorkflowRepository for PgWorkflowRepository {
         match row {
             Some((id,)) => Ok(Some(id)),
             _ => Ok(None),
-            //            None => Err(highnoon::Error::bad_request("job not found")),
         }
-        //        Ok(row)
     }
 }
 

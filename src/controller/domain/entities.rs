@@ -73,6 +73,38 @@ macro_rules! impl_i32_property {
                 self.value
             }
         }
+
+        impl sqlx::types::Type<sqlx::postgres::Postgres> for $type {
+            fn type_info() -> sqlx::postgres::PgTypeInfo {
+                <i32 as sqlx::types::Type<sqlx::postgres::Postgres>>::type_info()
+            }
+
+            fn compatible(ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                <i32 as sqlx::types::Type<sqlx::postgres::Postgres>>::compatible(ty)
+            }
+        }
+
+        impl sqlx::postgres::PgHasArrayType for $type {
+            fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+                <i32 as sqlx::postgres::PgHasArrayType>::array_type_info()
+            }
+
+            fn array_compatible(ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                <i32 as sqlx::postgres::PgHasArrayType>::array_compatible(ty)
+            }
+        }
+
+        impl sqlx::encode::Encode<'_, sqlx::postgres::Postgres> for $type {
+            fn encode_by_ref(
+                &self,
+                buf: &mut sqlx::postgres::PgArgumentBuffer,
+            ) -> sqlx::encode::IsNull {
+                <i32 as sqlx::encode::Encode<sqlx::postgres::Postgres>>::encode_by_ref(
+                    &self.value,
+                    buf,
+                )
+            }
+        }
     };
 }
 
@@ -92,6 +124,38 @@ macro_rules! impl_i64_property {
 
             pub fn to_i64(&self) -> i64 {
                 self.value
+            }
+        }
+
+        impl sqlx::types::Type<sqlx::postgres::Postgres> for $type {
+            fn type_info() -> sqlx::postgres::PgTypeInfo {
+                <i64 as sqlx::types::Type<sqlx::postgres::Postgres>>::type_info()
+            }
+
+            fn compatible(ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                <i64 as sqlx::types::Type<sqlx::postgres::Postgres>>::compatible(ty)
+            }
+        }
+
+        impl sqlx::postgres::PgHasArrayType for $type {
+            fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+                <i64 as sqlx::postgres::PgHasArrayType>::array_type_info()
+            }
+
+            fn array_compatible(ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                <i64 as sqlx::postgres::PgHasArrayType>::array_compatible(ty)
+            }
+        }
+
+        impl sqlx::encode::Encode<'_, sqlx::postgres::Postgres> for $type {
+            fn encode_by_ref(
+                &self,
+                buf: &mut sqlx::postgres::PgArgumentBuffer,
+            ) -> sqlx::encode::IsNull {
+                <i64 as sqlx::encode::Encode<sqlx::postgres::Postgres>>::encode_by_ref(
+                    &self.value,
+                    buf,
+                )
             }
         }
     };

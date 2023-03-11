@@ -76,7 +76,7 @@ impl JobRepository for PgJobRepository {
         .bind(job.id())
         .bind(job.name())
         .bind(job.workflow_id())
-        .bind(job.threshold().as_i32())
+        .bind(job.threshold())
         .bind(job.image())
         .bind(job.args())
         .bind(job.envs())
