@@ -5,6 +5,8 @@ use crate::impl_uuid_property;
 use anyhow::Result;
 use getset::Getters;
 use getset::Setters;
+use serde_json::json;
+use serde_json::Value as Json;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -91,6 +93,45 @@ impl Job {
             image: JobImage::new(image)?,
             args: args.into_iter().map(|a| JobArg::new(a)).flatten().collect(),
             envs: envs.into_iter().map(|e| JobEnv::new(e)).flatten().collect(),
+        })
+    }
+}
+
+impl TryFrom<Json> for Job {
+    type Error = anyhow::Error;
+
+    fn try_from(json: Json) -> std::result::Result<Self, Self::Error> {
+        let id = json!(Uuid::new_v4().to_string());
+        let id = match &json["id"] {
+            Json::Null => &id,
+            value => value,
+        };
+        let args = Vec::new();
+        let args = match &json["args"] {
+            Json::Null => &args,
+            value => value.as_array().unwrap_or(&args),
+        };
+        let envs = Vec::new();
+        let envs = match &json["envs"] {
+            Json::Null => &envs,
+            value => value.as_array().unwrap_or(&envs),
+        };
+        Ok(Self {
+            id: JobId::try_from(id)?,
+            name: JobName::try_from(&json["name"])?,
+            workflow_id: WorkflowId::try_from(&json["workflow_id"])?,
+            threshold: JobThreshold::try_from(&json["threshold"])?,
+            image: JobImage::try_from(&json["image"])?,
+            args: args
+                .into_iter()
+                .map(|a| JobArg::try_from(a))
+                .flatten()
+                .collect(),
+            envs: envs
+                .into_iter()
+                .map(|e| JobEnv::try_from(e))
+                .flatten()
+                .collect(),
         })
     }
 }

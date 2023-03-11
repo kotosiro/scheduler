@@ -25,7 +25,6 @@ use serde_json::Value;
 use tracing::error;
 use tracing::info;
 use tracing::warn;
-use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
 pub struct GetByNameQuery {
@@ -44,15 +43,7 @@ pub async fn create(
     Extension(state): Extension<SharedState>,
     Json(payload): Json<Value>,
 ) -> Result<Response, UseCaseError> {
-    let project = if let Ok(project) = Project::new(
-        payload["id"]
-            .as_str()
-            .map(|s| s.to_string())
-            .unwrap_or(Uuid::new_v4().to_string()),
-        payload["name"].as_str().unwrap_or("").to_string(),
-        payload["description"].as_str().unwrap_or("").to_string(),
-        payload.get("config").cloned(),
-    ) {
+    let project = if let Ok(project) = Project::try_from(payload) {
         project
     } else {
         error!("invalid project specification found");
@@ -174,9 +165,14 @@ pub async fn get_by_name(
 pub async fn get_summary_by_id(
     token: Token,
     Extension(state): Extension<SharedState>,
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
 ) -> Result<Response, UseCaseError> {
-    let id = ProjectId::new(id);
+    let id = if let Ok(id) = ProjectId::try_from(id) {
+        id
+    } else {
+        error!("invalid project id found");
+        return Err(UseCaseError::ValidationFailed);
+    };
     match ProjectService::get_summary_by_id(&state.controller.db_pool, &id).await? {
         None => Ok(StatusCode::NOT_FOUND.into_response()),
         Some(row) => {
@@ -210,9 +206,14 @@ pub async fn get_summary_by_id(
 pub async fn delete(
     token: Token,
     Extension(state): Extension<SharedState>,
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
 ) -> Result<Response, UseCaseError> {
-    let id = ProjectId::new(id);
+    let id = if let Ok(id) = ProjectId::try_from(id) {
+        id
+    } else {
+        error!("invalid project id found");
+        return Err(UseCaseError::ValidationFailed);
+    };
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
         &state.controller.config.no_auth,
@@ -248,10 +249,15 @@ pub async fn delete(
 pub async fn list_workflows_by_id(
     token: Token,
     Extension(state): Extension<SharedState>,
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
     query: Query<ListWorkflowsByIdQuery>,
 ) -> Result<Response, UseCaseError> {
-    let id = ProjectId::new(id);
+    let id = if let Ok(id) = ProjectId::try_from(id) {
+        id
+    } else {
+        error!("invalid project id found");
+        return Err(UseCaseError::ValidationFailed);
+    };
     let name = &query
         .name
         .as_ref()

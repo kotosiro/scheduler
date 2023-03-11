@@ -4,6 +4,7 @@ use crate::impl_uuid_property;
 use anyhow::Result;
 use getset::Getters;
 use getset::Setters;
+use serde_json::json;
 use serde_json::Value as Json;
 use uuid::Uuid;
 use validator::Validate;
@@ -62,6 +63,28 @@ impl Project {
             name: ProjectName::new(name)?,
             description: ProjectDescription::new(description)?,
             config: config.map(|json| ProjectConfig::new(json)),
+        })
+    }
+}
+
+impl TryFrom<Json> for Project {
+    type Error = anyhow::Error;
+
+    fn try_from(json: Json) -> std::result::Result<Self, Self::Error> {
+        let id = json!(Uuid::new_v4().to_string());
+        let id = match &json["id"] {
+            Json::Null => &id,
+            value => value,
+        };
+        let config = match &json["config"] {
+            Json::Null => None,
+            value => Some(value),
+        };
+        Ok(Self {
+            id: ProjectId::try_from(id)?,
+            name: ProjectName::try_from(&json["name"])?,
+            description: ProjectDescription::try_from(&json["description"])?,
+            config: config.map(|json| ProjectConfig::new(json.clone())),
         })
     }
 }

@@ -21,6 +21,28 @@ macro_rules! impl_bool_property {
             }
         }
 
+        impl TryFrom<&serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: &serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_bool()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                Ok(Self::new(value))
+            }
+        }
+
+        impl TryFrom<serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_bool()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                Ok(Self::new(value))
+            }
+        }
+
         impl sqlx::types::Type<sqlx::postgres::Postgres> for $type {
             fn type_info() -> sqlx::postgres::PgTypeInfo {
                 <bool as sqlx::types::Type<sqlx::postgres::Postgres>>::type_info()
@@ -74,6 +96,30 @@ macro_rules! impl_i32_property {
             }
         }
 
+        impl TryFrom<&serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: &serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_i64()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                let value = i32::try_from(value)?;
+                Self::new(value)
+            }
+        }
+
+        impl TryFrom<serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_i64()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                let value = i32::try_from(value)?;
+                Self::new(value)
+            }
+        }
+
         impl sqlx::types::Type<sqlx::postgres::Postgres> for $type {
             fn type_info() -> sqlx::postgres::PgTypeInfo {
                 <i32 as sqlx::types::Type<sqlx::postgres::Postgres>>::type_info()
@@ -124,6 +170,28 @@ macro_rules! impl_i64_property {
 
             pub fn to_i64(&self) -> i64 {
                 self.value
+            }
+        }
+
+        impl TryFrom<&serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: &serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_i64()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                Self::new(value)
+            }
+        }
+
+        impl TryFrom<serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_i64()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                Self::new(value)
             }
         }
 
@@ -182,6 +250,28 @@ macro_rules! impl_string_property {
 
             pub fn to_string(&self) -> String {
                 self.value.as_str().to_string()
+            }
+        }
+
+        impl TryFrom<&serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: &serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_str()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                Self::new(value)
+            }
+        }
+
+        impl TryFrom<serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_str()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                Self::new(value)
             }
         }
 
@@ -257,6 +347,30 @@ macro_rules! impl_uuid_property {
             fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
                 let value = uuid::Uuid::parse_str(value.as_str())?;
                 Ok(Self { value })
+            }
+        }
+
+        impl TryFrom<&serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: &serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_str()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                let value = uuid::Uuid::parse_str(value)?;
+                Ok(Self::new(value))
+            }
+        }
+
+        impl TryFrom<serde_json::Value> for $type {
+            type Error = anyhow::Error;
+
+            fn try_from(value: serde_json::Value) -> std::result::Result<Self, Self::Error> {
+                let value = value
+                    .as_str()
+                    .ok_or(anyhow::anyhow!("invalid json value"))?;
+                let value = uuid::Uuid::parse_str(value)?;
+                Ok(Self::new(value))
             }
         }
 
