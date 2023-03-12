@@ -1,5 +1,5 @@
-use crate::controller::domain::entities::workflow::Workflow;
-use crate::controller::domain::entities::workflow::WorkflowId;
+use crate::controller::entities::workflow::Workflow;
+use crate::controller::entities::workflow::WorkflowId;
 use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
@@ -173,10 +173,10 @@ impl WorkflowRepository for PgWorkflowRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::controller::domain::entities::project::Project;
-    use crate::controller::domain::entities::project::ProjectId;
-    use crate::controller::domain::repositories::project::PgProjectRepository;
-    use crate::controller::domain::repositories::project::ProjectRepository;
+    use crate::controller::entities::project::Project;
+    use crate::controller::entities::project::ProjectId;
+    use crate::controller::repositories::project::PgProjectRepository;
+    use crate::controller::repositories::project::ProjectRepository;
     use anyhow::Context;
     use anyhow::Result;
     use sqlx::PgConnection;

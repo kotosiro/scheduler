@@ -1,6 +1,7 @@
-mod domain;
+mod entities;
+mod interactors;
+mod repositories;
 mod services;
-mod use_cases;
 use crate::config::Config;
 use crate::middlewares;
 use anyhow::Context;
@@ -38,7 +39,7 @@ impl Controller {
         if self.config.no_auth {
             warn!("authorization is disabled, this is not recommended in production");
         }
-        use_cases::bind(self)
+        interactors::bind(self)
             .await
             .context("failed to start API server")?;
         Ok(())

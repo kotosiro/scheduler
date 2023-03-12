@@ -1,6 +1,6 @@
-use crate::controller::domain::entities::workflow::WorkflowId;
-use crate::controller::domain::repositories::workflow::PgWorkflowRepository;
-use crate::controller::domain::repositories::workflow::WorkflowRepository;
+use crate::controller::entities::workflow::WorkflowId;
+use crate::controller::repositories::workflow::PgWorkflowRepository;
+use crate::controller::repositories::workflow::WorkflowRepository;
 use crate::messages::opa::Action;
 use crate::messages::opa::Decision;
 use crate::messages::opa::Input;

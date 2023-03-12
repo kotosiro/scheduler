@@ -1,13 +1,13 @@
-use crate::controller::domain::entities::project::Project;
-use crate::controller::domain::entities::project::ProjectId;
-use crate::controller::domain::entities::project::ProjectName;
-use crate::controller::domain::entities::workflow::WorkflowName;
+use crate::controller::entities::project::Project;
+use crate::controller::entities::project::ProjectId;
+use crate::controller::entities::project::ProjectName;
+use crate::controller::entities::workflow::WorkflowName;
+use crate::controller::interactors::InteractorError;
+use crate::controller::interactors::SharedState;
 use crate::controller::services::config::ConfigService;
 use crate::controller::services::opa::Event;
 use crate::controller::services::opa::OPAService;
 use crate::controller::services::project::ProjectService;
-use crate::controller::use_cases::SharedState;
-use crate::controller::use_cases::UseCaseError;
 use crate::messages::config::ConfigUpdate;
 use crate::messages::opa::Token;
 use crate::middlewares::postgres::has_conflict;
@@ -42,12 +42,12 @@ pub async fn create(
     token: Token,
     Extension(state): Extension<SharedState>,
     Json(payload): Json<Value>,
-) -> Result<Response, UseCaseError> {
+) -> Result<Response, InteractorError> {
     let project = if let Ok(project) = Project::try_from(payload) {
         project
     } else {
         error!("invalid project specification found");
-        return Err(UseCaseError::ValidationFailed);
+        return Err(InteractorError::ValidationFailed);
     };
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
@@ -60,7 +60,7 @@ pub async fn create(
     .await
     {
         warn!("failed to update project");
-        return Err(UseCaseError::Unauthorized);
+        return Err(InteractorError::Unauthorized);
     }
     match pg_error(ProjectService::create(&state.controller.db_pool, &project).await)? {
         Ok(_) => {
@@ -86,9 +86,9 @@ pub async fn create(
         }
         Err(e) if has_conflict(&e) => {
             warn!("failed to update project: {}", e);
-            Err(UseCaseError::Conflict)
+            Err(InteractorError::Conflict)
         }
-        _ => Err(UseCaseError::InternalServerProblem(anyhow!(
+        _ => Err(InteractorError::InternalServerProblem(anyhow!(
             "Internal server error"
         ))),
     }
@@ -98,13 +98,13 @@ pub async fn get_by_name(
     token: Token,
     Extension(state): Extension<SharedState>,
     query: Query<GetByNameQuery>,
-) -> Result<Response, UseCaseError> {
+) -> Result<Response, InteractorError> {
     if let Some(name) = &query.name {
         let name = if let Ok(name) = ProjectName::new(name) {
             name
         } else {
             error!("invalid project name found");
-            return Err(UseCaseError::ValidationFailed);
+            return Err(InteractorError::ValidationFailed);
         };
         match ProjectService::get_by_name(&state.controller.db_pool, &name).await? {
             None => Ok(StatusCode::NOT_FOUND.into_response()),
@@ -118,7 +118,7 @@ pub async fn get_by_name(
                 .await
                 {
                     warn!("failed to get project");
-                    return Err(UseCaseError::Unauthorized);
+                    return Err(InteractorError::Unauthorized);
                 }
                 let body = Json(json!({
                     "id": row.id,
@@ -141,7 +141,7 @@ pub async fn get_by_name(
         .await
         {
             warn!("failed to list project");
-            return Err(UseCaseError::Unauthorized);
+            return Err(InteractorError::Unauthorized);
         }
         let rows = ProjectService::list(&state.controller.db_pool, None).await?;
         let body: Json<Value> = Json(Value::Array(
@@ -166,12 +166,12 @@ pub async fn get_summary_by_id(
     token: Token,
     Extension(state): Extension<SharedState>,
     Path(id): Path<String>,
-) -> Result<Response, UseCaseError> {
+) -> Result<Response, InteractorError> {
     let id = if let Ok(id) = ProjectId::try_from(id) {
         id
     } else {
         error!("project id must be uuid v4");
-        return Err(UseCaseError::BadRequest);
+        return Err(InteractorError::BadRequest);
     };
     match ProjectService::get_summary_by_id(&state.controller.db_pool, &id).await? {
         None => Ok(StatusCode::NOT_FOUND.into_response()),
@@ -185,7 +185,7 @@ pub async fn get_summary_by_id(
             .await
             {
                 warn!("failed to get project");
-                return Err(UseCaseError::Unauthorized);
+                return Err(InteractorError::Unauthorized);
             }
             let body = Json(json!({
                 "id": row.id,
@@ -207,12 +207,12 @@ pub async fn delete(
     token: Token,
     Extension(state): Extension<SharedState>,
     Path(id): Path<String>,
-) -> Result<Response, UseCaseError> {
+) -> Result<Response, InteractorError> {
     let id = if let Ok(id) = ProjectId::try_from(id) {
         id
     } else {
         error!("project id must be uuid v4");
-        return Err(UseCaseError::BadRequest);
+        return Err(InteractorError::BadRequest);
     };
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
@@ -225,7 +225,7 @@ pub async fn delete(
     .await
     {
         warn!("failed to delete project");
-        return Err(UseCaseError::Unauthorized);
+        return Err(InteractorError::Unauthorized);
     }
     match pg_error(ProjectService::delete(&state.controller.db_pool, &id).await)? {
         Ok(done) => {
@@ -239,7 +239,7 @@ pub async fn delete(
         }
         Err(e) => {
             warn!("failed to delete project: {}", e);
-            Err(UseCaseError::InternalServerProblem(anyhow!(
+            Err(InteractorError::InternalServerProblem(anyhow!(
                 "Internal server error"
             )))
         }
@@ -251,12 +251,12 @@ pub async fn list_workflows_by_id(
     Extension(state): Extension<SharedState>,
     Path(id): Path<String>,
     query: Query<ListWorkflowsByIdQuery>,
-) -> Result<Response, UseCaseError> {
+) -> Result<Response, InteractorError> {
     let id = if let Ok(id) = ProjectId::try_from(id) {
         id
     } else {
         error!("project id must be uuid v4");
-        return Err(UseCaseError::BadRequest);
+        return Err(InteractorError::BadRequest);
     };
     let name = &query
         .name
@@ -282,7 +282,7 @@ pub async fn list_workflows_by_id(
     .await
     {
         warn!("failed to list project workflows");
-        return Err(UseCaseError::Unauthorized);
+        return Err(InteractorError::Unauthorized);
     }
     let rows = ProjectService::list_workflows_by_id(
         &state.controller.db_pool,

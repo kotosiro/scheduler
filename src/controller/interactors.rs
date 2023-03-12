@@ -28,7 +28,7 @@ pub struct State {
 
 type SharedState = Arc<State>;
 
-pub enum UseCaseError {
+pub enum InteractorError {
     InternalServerProblem(anyhow::Error),
     BadRequest,
     Unauthorized,
@@ -36,25 +36,25 @@ pub enum UseCaseError {
     Conflict,
 }
 
-impl From<anyhow::Error> for UseCaseError {
+impl From<anyhow::Error> for InteractorError {
     fn from(e: anyhow::Error) -> Self {
-        UseCaseError::InternalServerProblem(e)
+        InteractorError::InternalServerProblem(e)
     }
 }
 
-impl IntoResponse for UseCaseError {
+impl IntoResponse for InteractorError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            UseCaseError::InternalServerProblem(e) => {
+            InteractorError::InternalServerProblem(e) => {
                 debug!("stacktrace: {}", e.backtrace());
                 (StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong")
             }
-            UseCaseError::BadRequest => (StatusCode::BAD_REQUEST, "Bad request"),
-            UseCaseError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized"),
-            UseCaseError::ValidationFailed => {
+            InteractorError::BadRequest => (StatusCode::BAD_REQUEST, "Bad request"),
+            InteractorError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized"),
+            InteractorError::ValidationFailed => {
                 (StatusCode::UNPROCESSABLE_ENTITY, "Validation errors")
             }
-            UseCaseError::Conflict => (StatusCode::CONFLICT, "Confliction occured"),
+            InteractorError::Conflict => (StatusCode::CONFLICT, "Confliction occured"),
         };
         let body = Json(json!({
             "error": message,

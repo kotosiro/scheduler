@@ -1,7 +1,7 @@
-use crate::controller::domain::entities::project::Project;
-use crate::controller::domain::entities::project::ProjectId;
-use crate::controller::domain::entities::project::ProjectName;
-use crate::controller::domain::entities::workflow::WorkflowName;
+use crate::controller::entities::project::Project;
+use crate::controller::entities::project::ProjectId;
+use crate::controller::entities::project::ProjectName;
+use crate::controller::entities::workflow::WorkflowName;
 use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
@@ -424,17 +424,17 @@ impl ProjectRepository for PgProjectRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::controller::domain::entities::job::Job;
-    use crate::controller::domain::entities::job::JobId;
-    use crate::controller::domain::entities::run::Run;
-    use crate::controller::domain::entities::workflow::Workflow;
-    use crate::controller::domain::entities::workflow::WorkflowId;
-    use crate::controller::domain::repositories::job::JobRepository;
-    use crate::controller::domain::repositories::job::PgJobRepository;
-    use crate::controller::domain::repositories::run::PgRunRepository;
-    use crate::controller::domain::repositories::run::RunRepository;
-    use crate::controller::domain::repositories::workflow::PgWorkflowRepository;
-    use crate::controller::domain::repositories::workflow::WorkflowRepository;
+    use crate::controller::entities::job::Job;
+    use crate::controller::entities::job::JobId;
+    use crate::controller::entities::run::Run;
+    use crate::controller::entities::workflow::Workflow;
+    use crate::controller::entities::workflow::WorkflowId;
+    use crate::controller::repositories::job::JobRepository;
+    use crate::controller::repositories::job::PgJobRepository;
+    use crate::controller::repositories::run::PgRunRepository;
+    use crate::controller::repositories::run::RunRepository;
+    use crate::controller::repositories::workflow::PgWorkflowRepository;
+    use crate::controller::repositories::workflow::WorkflowRepository;
     use crate::messages::run::RunPriority;
     use crate::messages::token::TokenState;
     use anyhow::Context;

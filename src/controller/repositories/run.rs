@@ -1,5 +1,5 @@
-use crate::controller::domain::entities::job::Job;
-use crate::controller::domain::entities::job::JobId;
+use crate::controller::entities::run::Run;
+use crate::controller::entities::run::RunId;
 use crate::middlewares::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
@@ -10,46 +10,46 @@ use sqlx::postgres::PgQueryResult;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
-pub struct JobRow {
+pub struct RunRow {
     pub id: Uuid,
-    pub name: String,
-    pub workflow_id: Uuid,
-    pub threshold: i32,
-    pub image: String,
-    pub args: Vec<String>,
-    pub envs: Vec<String>,
+    pub state: String,
+    pub priority: String,
+    pub job_id: Uuid,
+    pub triggered_at: DateTime<Utc>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub finished_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
 #[async_trait]
-pub trait JobRepository: Send + Sync + 'static {
+pub trait RunRepository: Send + Sync + 'static {
     async fn create(
         &self,
-        job: &Job,
+        run: &Run,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<PgQueryResult>;
 
     async fn delete(
         &self,
-        id: &JobId,
+        id: &RunId,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<PgQueryResult>;
 
     async fn get_by_id(
         &self,
-        id: &JobId,
+        id: &RunId,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Option<JobRow>>;
+    ) -> Result<Option<RunRow>>;
 }
 
-pub struct PgJobRepository;
+pub struct PgRunRepository;
 
 #[async_trait]
-impl JobRepository for PgJobRepository {
+impl RunRepository for PgRunRepository {
     async fn create(
         &self,
-        job: &Job,
+        run: &Run,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<PgQueryResult> {
         let mut conn = executor
@@ -57,40 +57,32 @@ impl JobRepository for PgJobRepository {
             .await
             .context("failed to acquire postgres connection")?;
         sqlx::query(
-            "INSERT INTO job (
+            "INSERT INTO run (
                  id,
-                 name,
-                 workflow_id,
-                 threshold,
-                 image,
-                 args,
-                 envs
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-             ON CONFLICT(name, workflow_id)
-             DO UPDATE
-             SET threshold = $4,
-                 image = $5,
-                 args = $6,
-                 envs = $7",
+                 state,
+                 priority,
+                 job_id,
+                 triggered_at,
+                 started_at,
+                 finished_at
+             ) VALUES ($1, $2, $3, $4, $5, NULL, NULL)",
         )
-        .bind(job.id())
-        .bind(job.name())
-        .bind(job.workflow_id())
-        .bind(job.threshold())
-        .bind(job.image())
-        .bind(job.args())
-        .bind(job.envs())
+        .bind(run.id())
+        .bind(run.state())
+        .bind(run.priority())
+        .bind(run.job_id())
+        .bind(run.triggered_at())
         .execute(&mut *conn)
         .await
         .context(format!(
-            r#"failed to upsert "{}" into [job]"#,
-            job.id().as_uuid()
+            r#"failed to upsert "{}" into [run]"#,
+            run.id().as_uuid()
         ))
     }
 
     async fn delete(
         &self,
-        id: &JobId,
+        id: &RunId,
         executor: impl PgAcquire<'_> + 'async_trait,
     ) -> Result<PgQueryResult> {
         let mut conn = executor
@@ -98,42 +90,42 @@ impl JobRepository for PgJobRepository {
             .await
             .context("failed to acquire postgres connection")?;
         sqlx::query(
-            "DELETE FROM job
+            "DELETE FROM run
              WHERE id = $1",
         )
         .bind(id)
         .execute(&mut *conn)
         .await
-        .context(format!(r#"failed to delete "{}" from [job]"#, id.as_uuid()))
+        .context(format!(r#"failed to delete "{}" from [run]"#, id.as_uuid()))
     }
 
     async fn get_by_id(
         &self,
-        id: &JobId,
+        id: &RunId,
         executor: impl PgAcquire<'_> + 'async_trait,
-    ) -> Result<Option<JobRow>> {
+    ) -> Result<Option<RunRow>> {
         let mut conn = executor
             .acquire()
             .await
             .context("failed to acquire postgres connection")?;
-        let row: Option<JobRow> = sqlx::query_as::<_, JobRow>(
+        let row: Option<RunRow> = sqlx::query_as::<_, RunRow>(
             "SELECT
                  id,
-                 name,
-                 workflow_id,
-                 threshold,
-                 image,
-                 args,
-                 envs,
+                 state,
+                 priority,
+                 job_id,
+                 triggered_at,
+                 started_at,
+                 finished_at,
                  created_at,
                  updated_at
-             FROM job
+             FROM run
              WHERE id = $1",
         )
         .bind(id)
         .fetch_optional(&mut *conn)
         .await
-        .context(format!(r#"failed to select "{}" from [job]"#, id.as_uuid()))?;
+        .context(format!(r#"failed to select "{}" from [run]"#, id.as_uuid()))?;
         Ok(row)
     }
 }
@@ -141,16 +133,23 @@ impl JobRepository for PgJobRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::controller::domain::entities::project::Project;
-    use crate::controller::domain::entities::project::ProjectId;
-    use crate::controller::domain::entities::workflow::Workflow;
-    use crate::controller::domain::entities::workflow::WorkflowId;
-    use crate::controller::domain::repositories::project::PgProjectRepository;
-    use crate::controller::domain::repositories::project::ProjectRepository;
-    use crate::controller::domain::repositories::workflow::PgWorkflowRepository;
-    use crate::controller::domain::repositories::workflow::WorkflowRepository;
+    use crate::controller::entities::job::Job;
+    use crate::controller::entities::job::JobId;
+    use crate::controller::entities::project::Project;
+    use crate::controller::entities::project::ProjectId;
+    use crate::controller::entities::workflow::Workflow;
+    use crate::controller::entities::workflow::WorkflowId;
+    use crate::controller::repositories::job::JobRepository;
+    use crate::controller::repositories::job::PgJobRepository;
+    use crate::controller::repositories::project::PgProjectRepository;
+    use crate::controller::repositories::project::ProjectRepository;
+    use crate::controller::repositories::workflow::PgWorkflowRepository;
+    use crate::controller::repositories::workflow::WorkflowRepository;
+    use crate::messages::run::RunPriority;
+    use crate::messages::token::TokenState;
     use anyhow::Context;
     use anyhow::Result;
+    use chrono::Utc;
     use sqlx::PgConnection;
     use sqlx::PgPool;
 
@@ -213,10 +212,43 @@ mod tests {
         Ok(job)
     }
 
+    async fn create_run(job_id: &JobId, tx: &mut PgConnection) -> Result<Run> {
+        let repo = PgRunRepository;
+        let states = vec![
+            TokenState::Waiting,
+            TokenState::Active,
+            TokenState::Running,
+            TokenState::Success,
+            TokenState::Failure,
+            TokenState::Error,
+        ];
+        let state = testutils::rand::choice(&states);
+        let priorities = vec![
+            RunPriority::BackFill,
+            RunPriority::Low,
+            RunPriority::Normal,
+            RunPriority::High,
+        ];
+        let priority = testutils::rand::choice(&priorities);
+        let now = Utc::now();
+        let run = Run::new(
+            testutils::rand::uuid(),
+            *state,
+            *priority,
+            job_id.as_uuid().to_string(),
+            now,
+        )
+        .context("failed to create run")?;
+        repo.create(&run, tx)
+            .await
+            .context("failed to insert run")?;
+        Ok(run)
+    }
+
     #[sqlx::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_create_and_get_by_id(pool: PgPool) -> Result<()> {
-        let repo = PgJobRepository;
+        let repo = PgRunRepository;
         let mut tx = pool
             .begin()
             .await
@@ -230,30 +262,19 @@ mod tests {
         let job = create_job(&workflow.id(), &mut tx)
             .await
             .expect("new job should be created");
-        let fetched = repo
-            .get_by_id(&job.id(), &mut tx)
+        let run = create_run(&job.id(), &mut tx)
             .await
-            .expect("inserted job should be found");
+            .expect("new run should be created");
+        let fetched = repo
+            .get_by_id(&run.id(), &mut tx)
+            .await
+            .expect("inserted run should be found");
         if let Some(fetched) = fetched {
-            assert_eq!(&fetched.id, job.id().as_uuid());
-            assert_eq!(&fetched.name, job.name().as_str());
-            assert_eq!(&fetched.workflow_id, job.workflow_id().as_uuid());
-            assert_eq!(&fetched.threshold, job.threshold().as_i32());
-            assert_eq!(&fetched.image, job.image().as_str());
-            assert_eq!(
-                fetched.args,
-                job.args()
-                    .into_iter()
-                    .map(|a| a.as_str())
-                    .collect::<Vec<_>>()
-            );
-            assert_eq!(
-                fetched.envs,
-                job.envs()
-                    .into_iter()
-                    .map(|e| e.as_str())
-                    .collect::<Vec<_>>()
-            );
+            assert_eq!(&fetched.id, run.id().as_uuid());
+            assert_eq!(&fetched.state, run.state().as_ref());
+            assert_eq!(&fetched.priority, run.priority().as_ref());
+            assert!(&fetched.started_at.is_none());
+            assert!(&fetched.finished_at.is_none());
         } else {
             panic!("inserted job should be found");
         }
