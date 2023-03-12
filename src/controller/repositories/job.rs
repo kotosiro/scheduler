@@ -1,6 +1,6 @@
 use crate::controller::entities::job::Job;
 use crate::controller::entities::job::JobId;
-use crate::middlewares::postgres::PgAcquire;
+use crate::infra::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;

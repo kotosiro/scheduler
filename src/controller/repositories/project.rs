@@ -2,7 +2,7 @@ use crate::controller::entities::project::Project;
 use crate::controller::entities::project::ProjectId;
 use crate::controller::entities::project::ProjectName;
 use crate::controller::entities::workflow::WorkflowName;
-use crate::middlewares::postgres::PgAcquire;
+use crate::infra::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;

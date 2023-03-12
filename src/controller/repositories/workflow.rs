@@ -1,6 +1,6 @@
 use crate::controller::entities::workflow::Workflow;
 use crate::controller::entities::workflow::WorkflowId;
-use crate::middlewares::postgres::PgAcquire;
+use crate::infra::postgres::PgAcquire;
 use anyhow::Context;
 use anyhow::Result;
 use async_trait::async_trait;

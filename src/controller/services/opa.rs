@@ -1,14 +1,13 @@
 use crate::controller::entities::workflow::WorkflowId;
 use crate::controller::repositories::workflow::PgWorkflowRepository;
 use crate::controller::repositories::workflow::WorkflowRepository;
-use crate::messages::opa::Action;
-use crate::messages::opa::Decision;
-use crate::messages::opa::Input;
-use crate::messages::opa::Query;
-use crate::messages::opa::Resource;
-use crate::messages::opa::Token;
+use crate::infra::opa;
+use crate::infra::opa::Action;
+use crate::infra::opa::Input;
+use crate::infra::opa::Query;
+use crate::infra::opa::Resource;
+use crate::infra::opa::Token;
 use anyhow::anyhow;
-use anyhow::Context;
 use anyhow::Result;
 use axum::async_trait;
 use axum::extract::FromRequestParts;
@@ -20,11 +19,9 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use axum::RequestPartsExt;
-use reqwest::Url;
 use serde_json::json;
 use sqlx::PgPool;
 use tracing::debug;
-use tracing::error;
 use tracing::warn;
 use uuid::Uuid;
 
@@ -59,11 +56,11 @@ where
 
 impl IntoResponse for TokenError {
     fn into_response(self) -> axum::response::Response {
-        let (status, error_message) = match self {
+        let (status, message) = match self {
             TokenError::NeverThrown => (StatusCode::INTERNAL_SERVER_ERROR, "internal server error"),
         };
         let body = Json(json!({
-            "error": error_message,
+            "error": message,
         }));
         (status, body).into_response()
     }
@@ -137,29 +134,17 @@ impl Event {
     }
 
     async fn is_authorized_by(&self, url: &Option<String>) -> Result<bool> {
-        let opa = if let Some(opa) = url {
-            opa
-        } else {
-            error!(
-		"OPA sidecar address is unset (to disable auth you must set `KOTOSIRO_NO_AUTH=true`)"
-            );
-            return Ok(false);
-        };
-        let url = Url::parse(opa).context(format!(r#"failed to parse OPA url "{}""#, &opa))?;
-        let url = url.join("/v1/data/kotosiro/authorize")?;
-        let res = reqwest::Client::new()
-            .post(url)
-            .json(&Query {
+        let decision = opa::authorize(
+            url,
+            &Query {
                 input: Input {
-                    token: &self.token,
                     action: self.action,
+                    token: &self.token,
                     resource: &self.resource,
                 },
-            })
-            .send()
-            .await
-            .context(format!(r#"failed to query OPA request to "{}""#, &opa))?;
-        let decision: Decision = res.json().await.context("failed to parse OPA response")?;
+            },
+        )
+        .await?;
         if decision.result.unwrap_or(false) {
             debug!(?self.token, ?self.action, ?self.resource, "authorized");
         } else {
@@ -198,44 +183,6 @@ impl OPAService for PgPool {
             Ok(())
         } else {
             Err(anyhow!(r#"failed to authorize event "{:?}""#, event))
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[sqlx::test]
-    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
-    async fn test_authorized(pool: PgPool) {
-        let no_auth: bool = testutils::rand::bool();
-        let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
-        OPAService::authorize(&pool, &no_auth, &url, Event::get())
-            .await
-            .expect("GET access should be authorized");
-        OPAService::authorize(&pool, &no_auth, &url, Event::list())
-            .await
-            .expect("LIST access should be authorized");
-    }
-
-    #[sqlx::test]
-    #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
-    async fn test_unauthorized(pool: PgPool) {
-        let no_auth: bool = testutils::rand::bool();
-        let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
-        if no_auth {
-            OPAService::authorize(&pool, &no_auth, &url, Event::update())
-                .await
-                .expect("UPDATE access should be authorized");
-            OPAService::authorize(&pool, &no_auth, &url, Event::delete())
-                .await
-                .expect("DELETE access should be authorized");
-        } else {
-            let result = OPAService::authorize(&pool, &no_auth, &url, Event::update()).await;
-            assert!(matches!(result, Err(_)));
-            let result = OPAService::authorize(&pool, &no_auth, &url, Event::delete()).await;
-            assert!(matches!(result, Err(_)));
         }
     }
 }

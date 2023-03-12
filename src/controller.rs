@@ -3,7 +3,7 @@ mod interactors;
 mod repositories;
 mod services;
 use crate::config::Config;
-use crate::middlewares;
+use crate::infra;
 use anyhow::Context;
 use anyhow::Result;
 use lapin::Connection;
@@ -21,10 +21,10 @@ pub struct Controller {
 
 impl Controller {
     pub async fn new(config: Config) -> Result<Arc<Self>> {
-        let db_pool = middlewares::new_pg_pool(&config)
+        let db_pool = infra::new_pg_pool(&config)
             .await
             .context("failed to create postgres connection pool")?;
-        let mq_conn = middlewares::new_rmq_connection(&config)
+        let mq_conn = infra::new_rmq_connection(&config)
             .await
             .context("failed to create rabbitmq connection")?;
         Ok(Arc::new(Controller {

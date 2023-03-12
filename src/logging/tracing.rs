@@ -83,7 +83,7 @@ where
 impl Visit for LogVisitor {
     fn record_debug(&mut self, field: &Field, value: &dyn Debug) {
         match field.name() {
-            "message" => self.message = format!("{:?}\n", value),
+            "message" => self.message = format!("  {:?}\n", value),
             name => {
                 self.fields
                     .push_str(&format!("    {}: {:?}\n", name.cyan(), value));
