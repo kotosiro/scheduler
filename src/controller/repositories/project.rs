@@ -445,7 +445,10 @@ mod tests {
     use sqlx::PgPool;
     use std::cmp::min;
 
-    async fn create_project(config: Option<Json>, tx: &mut PgConnection) -> Result<Project> {
+    async fn create_project(
+        config: impl Into<Option<Json>>,
+        tx: &mut PgConnection,
+    ) -> Result<Project> {
         let repo = PgProjectRepository;
         let project = Project::new(
             testutils::rand::uuid(),
@@ -714,7 +717,7 @@ mod tests {
             testutils::rand::string(10),
         );
         let config: Json = serde_json::from_str(&config).context("failed to create config")?;
-        let project = create_project(Some(config.clone()), &mut tx)
+        let project = create_project(config.clone(), &mut tx)
             .await
             .expect("new project should be created");
         let fetched = repo

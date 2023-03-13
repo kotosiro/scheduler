@@ -156,8 +156,12 @@ impl Event {
 
 #[async_trait]
 pub trait OPAService {
-    async fn authorize(&self, no_auth: &bool, url: Option<&String>, mut event: Event)
-        -> Result<()>;
+    async fn authorize(
+        &self,
+        no_auth: &bool,
+        url: impl Into<Option<&String>> + Send,
+        mut event: Event,
+    ) -> Result<()>;
 }
 
 #[async_trait]
@@ -165,7 +169,7 @@ impl OPAService for PgPool {
     async fn authorize(
         &self,
         no_auth: &bool,
-        url: Option<&String>,
+        url: impl Into<Option<&String>> + Send,
         mut event: Event,
     ) -> Result<()> {
         if *no_auth {
@@ -179,7 +183,7 @@ impl OPAService for PgPool {
                 event.resource.project_id = project_id;
             }
         }
-        if event.is_authorized_by(url).await? {
+        if event.is_authorized_by(url.into()).await? {
             Ok(())
         } else {
             Err(anyhow!(r#"failed to authorize event "{:?}""#, event))

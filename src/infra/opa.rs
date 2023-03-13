@@ -73,8 +73,8 @@ pub struct Decision {
     pub result: Option<bool>,
 }
 
-pub async fn authorize<'a>(url: impl Into<Option<&String>>, query: &Query<'a>) -> Result<Decision> {
-    let opa = if let Some(opa) = url.into() {
+pub async fn authorize<'a>(url: Option<&String>, query: &Query<'a>) -> Result<Decision> {
+    let opa = if let Some(opa) = url {
         opa
     } else {
         error!(
@@ -123,7 +123,7 @@ mod tests {
         let action: Action = Action::Get;
         let resource: Resource = Default::default();
         let decision = authorize(
-            &url,
+            Some(&url),
             &Query {
                 input: Input {
                     action: action,
@@ -139,7 +139,7 @@ mod tests {
         let action: Action = Action::List;
         let resource: Resource = Default::default();
         let decision = authorize(
-            &url,
+            Some(&url),
             &Query {
                 input: Input {
                     action: action,
@@ -161,7 +161,7 @@ mod tests {
         let action: Action = Action::Update;
         let resource: Resource = Default::default();
         let decision = authorize(
-            &url,
+            Some(&url),
             &Query {
                 input: Input {
                     action: action,
@@ -178,7 +178,7 @@ mod tests {
         let action: Action = Action::Delete;
         let resource: Resource = Default::default();
         let decision = authorize(
-            &url,
+            Some(&url),
             &Query {
                 input: Input {
                     action: action,

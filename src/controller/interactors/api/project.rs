@@ -266,19 +266,19 @@ pub async fn list_workflows_by_id(
         error!("project id must be uuid v4");
         return Err(InteractorError::BadRequest);
     };
-    let name = &query
+    let name = query
         .name
         .as_ref()
         .map(WorkflowName::new)
         .transpose()
         .unwrap_or(None);
-    let after = &query
+    let after = query
         .after
         .as_ref()
         .map(WorkflowName::new)
         .transpose()
         .unwrap_or(None);
-    let limit = &query.limit;
+    let limit = query.limit;
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
         &state.controller.config.no_auth,
@@ -293,9 +293,9 @@ pub async fn list_workflows_by_id(
     let rows = ProjectService::list_workflows_by_id(
         &state.controller.db_pool,
         &id,
-        Option::from(name),
-        Option::from(after),
-        Option::from(limit),
+        name.as_ref(),
+        after.as_ref(),
+        limit.as_ref(),
     )
     .await?;
     let body: Json<Value> = Json(Value::Array(
