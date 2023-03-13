@@ -14,7 +14,7 @@ pub struct TokenCount {
 
 impl_i32_property!(TokenCount);
 
-#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters, serde::Serialize)]
 pub struct Token {
     #[getset(get = "pub", set = "pub")]
     job_id: JobId,

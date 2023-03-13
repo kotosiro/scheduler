@@ -55,7 +55,7 @@ pub struct JobEnv {
 
 impl_string_property!(JobEnv);
 
-#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters, serde::Serialize)]
 pub struct Job {
     #[getset(get = "pub")]
     id: JobId,

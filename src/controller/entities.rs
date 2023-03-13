@@ -57,6 +57,15 @@ macro_rules! impl_bool_property {
                 )
             }
         }
+
+        impl serde::Serialize for $type {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                <bool as serde::Serialize>::serialize(&self.value, serializer)
+            }
+        }
     };
 }
 
@@ -113,6 +122,15 @@ macro_rules! impl_i32_property {
                     &self.value,
                     buf,
                 )
+            }
+        }
+
+        impl serde::Serialize for $type {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                <i32 as serde::Serialize>::serialize(&self.value, serializer)
             }
         }
     };
@@ -173,6 +191,15 @@ macro_rules! impl_i64_property {
                 )
             }
         }
+
+        impl serde::Serialize for $type {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                <i64 as serde::Serialize>::serialize(&self.value, serializer)
+            }
+        }
     };
 }
 
@@ -229,6 +256,15 @@ macro_rules! impl_string_property {
                     &self.value,
                     buf,
                 )
+            }
+        }
+
+        impl serde::Serialize for $type {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                <String as serde::Serialize>::serialize(&self.value, serializer)
             }
         }
     };
@@ -306,6 +342,15 @@ macro_rules! impl_uuid_property {
                 )
             }
         }
+
+        impl serde::Serialize for $type {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                <uuid::Uuid as serde::Serialize>::serialize(&self.value, serializer)
+            }
+        }
     };
 }
 
@@ -351,6 +396,15 @@ macro_rules! impl_json_property {
                     &self.value,
                     buf,
                 )
+            }
+        }
+
+        impl serde::Serialize for $type {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                <serde_json::Value as serde::Serialize>::serialize(&self.value, serializer)
             }
         }
     };

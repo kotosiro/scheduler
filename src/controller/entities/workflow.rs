@@ -38,7 +38,7 @@ pub struct WorkflowPaused {
 
 impl_bool_property!(WorkflowPaused);
 
-#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters, serde::Serialize)]
 pub struct Workflow {
     #[getset(get = "pub")]
     id: WorkflowId,

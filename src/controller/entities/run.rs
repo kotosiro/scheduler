@@ -16,7 +16,7 @@ pub struct RunId {
 
 impl_uuid_property!(RunId);
 
-#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters, serde::Serialize)]
 pub struct Run {
     #[getset(get = "pub")]
     id: RunId,

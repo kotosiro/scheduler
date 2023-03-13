@@ -20,7 +20,6 @@ use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::Response;
-use serde_json::json;
 use serde_json::Value;
 use tracing::error;
 use tracing::info;
@@ -87,12 +86,7 @@ pub async fn create(
             {
                 warn!("failed to publish project config update");
             }
-            let body = Json(json!({
-                "id": project.id().as_uuid(),
-                "name": project.name().as_str(),
-                "description": project.description().as_str(),
-            }));
-            Ok((StatusCode::CREATED, body).into_response())
+            Ok((StatusCode::CREATED, Json(project)).into_response())
         }
         Err(e) if has_conflict(&e) => {
             warn!("failed to update project: {}", e);
@@ -130,15 +124,7 @@ pub async fn get_by_name(
                     warn!("failed to get project");
                     return Err(InteractorError::Unauthorized);
                 }
-                let body = Json(json!({
-                    "id": row.id,
-                    "name": row.name,
-                    "description": row.description,
-                    "config": row.config,
-                    "created_at": row.created_at,
-                    "updated_at": row.updated_at,
-                }));
-                Ok((StatusCode::OK, body).into_response())
+                Ok((StatusCode::OK, Json(row)).into_response())
             }
         }
     } else {
@@ -154,21 +140,7 @@ pub async fn get_by_name(
             return Err(InteractorError::Unauthorized);
         }
         let rows = ProjectService::list(&state.controller.db_pool, None).await?;
-        let body: Json<Value> = Json(Value::Array(
-            rows.into_iter()
-                .map(|row| {
-                    json!({
-                        "id": row.id,
-                        "name": row.name,
-                        "description": row.description,
-                        "config": row.config,
-                        "created_at": row.created_at,
-                        "updated_at": row.updated_at,
-                    })
-                })
-                .collect(),
-        ));
-        Ok((StatusCode::OK, body).into_response())
+        Ok((StatusCode::OK, Json(rows)).into_response())
     }
 }
 
@@ -197,18 +169,7 @@ pub async fn get_summary_by_id(
                 warn!("failed to get project");
                 return Err(InteractorError::Unauthorized);
             }
-            let body = Json(json!({
-                "id": row.id,
-                "name": row.name,
-                "description": row.description,
-                "workflows": row.workflows,
-                "running_jobs": row.running_jobs,
-                "waiting_jobs": row.waiting_jobs,
-                "fails_last_hour": row.fails_last_hour,
-                "successes_last_hour": row.successes_last_hour,
-                "errors_last_hour": row.errors_last_hour,
-            }));
-            Ok((StatusCode::OK, body).into_response())
+            Ok((StatusCode::OK, Json(row)).into_response())
         }
     }
 }
@@ -298,22 +259,5 @@ pub async fn list_workflows_by_id(
         limit.as_ref(),
     )
     .await?;
-    let body: Json<Value> = Json(Value::Array(
-        rows.into_iter()
-            .map(|row| {
-                json!({
-                    "id": row.id,
-                    "name": row.name,
-                    "description": row.description,
-                    "paused": row.paused,
-                    "success": row.success,
-                    "running": row.running,
-                    "failure": row.failure,
-                    "waiting": row.waiting,
-                    "error": row.error,
-                })
-            })
-            .collect(),
-    ));
-    Ok((StatusCode::OK, body).into_response())
+    Ok((StatusCode::OK, Json(rows)).into_response())
 }

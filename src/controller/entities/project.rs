@@ -38,7 +38,7 @@ pub struct ProjectConfig {
 
 impl_json_property!(ProjectConfig);
 
-#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters, serde::Serialize)]
 pub struct Project {
     #[getset(get = "pub")]
     id: ProjectId,
