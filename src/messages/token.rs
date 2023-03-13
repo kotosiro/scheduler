@@ -1,7 +1,3 @@
-use anyhow::anyhow;
-use anyhow::Context;
-use serde_json::Value as Json;
-
 #[derive(
     Debug,
     Copy,
@@ -50,26 +46,6 @@ impl AsRef<str> for TokenState {
             TokenState::Failure => "failure",
             TokenState::Error => "error",
         }
-    }
-}
-
-impl TryFrom<&Json> for TokenState {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &Json) -> std::result::Result<Self, <TokenState as TryFrom<&Json>>::Error> {
-        let value = value.as_str().ok_or(anyhow!("invalid json value"))?;
-        Ok(<TokenState as std::str::FromStr>::from_str(value)
-            .context("failed to parse token state")?)
-    }
-}
-
-impl TryFrom<Json> for TokenState {
-    type Error = anyhow::Error;
-
-    fn try_from(value: Json) -> std::result::Result<Self, <TokenState as TryFrom<Json>>::Error> {
-        let value = value.as_str().ok_or(anyhow!("invalid json value"))?;
-        Ok(<TokenState as std::str::FromStr>::from_str(value)
-            .context("failed to parse token state")?)
     }
 }
 

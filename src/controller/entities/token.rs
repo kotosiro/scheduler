@@ -4,7 +4,6 @@ use crate::messages::token::TokenState;
 use anyhow::Result;
 use getset::Getters;
 use getset::Setters;
-use serde_json::Value as Json;
 use validator::Validate;
 
 #[derive(Debug, Clone, PartialEq, Eq, Validate)]
@@ -31,18 +30,6 @@ impl Token {
             job_id: JobId::try_from(job_id)?,
             count: TokenCount::new(count)?,
             state: state,
-        })
-    }
-}
-
-impl TryFrom<Json> for Token {
-    type Error = anyhow::Error;
-
-    fn try_from(json: Json) -> std::result::Result<Self, Self::Error> {
-        Ok(Self {
-            job_id: JobId::try_from(&json["job_id"])?,
-            count: TokenCount::try_from(&json["count"])?,
-            state: TokenState::try_from(&json["state"])?,
         })
     }
 }

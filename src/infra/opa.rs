@@ -73,8 +73,8 @@ pub struct Decision {
     pub result: Option<bool>,
 }
 
-pub async fn authorize<'a>(url: &Option<String>, query: &Query<'a>) -> Result<Decision> {
-    let opa = if let Some(opa) = url {
+pub async fn authorize<'a>(url: impl Into<Option<&String>>, query: &Query<'a>) -> Result<Decision> {
+    let opa = if let Some(opa) = url.into() {
         opa
     } else {
         error!(
@@ -118,7 +118,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_authorized() {
-        let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
+        let url: String = String::from("http://127.0.0.1:8181");
         let token: Token = Token::None;
         let action: Action = Action::Get;
         let resource: Resource = Default::default();
@@ -156,7 +156,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // NOTE: Be sure '$ docker compose -f devops/local/docker-compose.yaml up' before running this test
     async fn test_unauthorized() {
-        let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
+        let url: String = String::from("http://127.0.0.1:8181");
         let token: Token = Token::None;
         let action: Action = Action::Update;
         let resource: Resource = Default::default();
@@ -173,7 +173,7 @@ mod tests {
         .await
         .expect("decision should be returned");
         assert_eq!(decision.result.unwrap_or(false), false);
-        let url: Option<String> = Some(String::from("http://127.0.0.1:8181"));
+        let url: String = String::from("http://127.0.0.1:8181");
         let token: Token = Token::None;
         let action: Action = Action::Delete;
         let resource: Resource = Default::default();

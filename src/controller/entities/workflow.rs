@@ -5,8 +5,6 @@ use crate::impl_uuid_property;
 use anyhow::Result;
 use getset::Getters;
 use getset::Setters;
-use serde_json::json;
-use serde_json::Value as Json;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -68,25 +66,6 @@ impl Workflow {
             project_id: ProjectId::try_from(project_id)?,
             description: WorkflowDescription::new(description)?,
             paused: WorkflowPaused::new(paused),
-        })
-    }
-}
-
-impl TryFrom<Json> for Workflow {
-    type Error = anyhow::Error;
-
-    fn try_from(json: Json) -> std::result::Result<Self, Self::Error> {
-        let id = json!(Uuid::new_v4().to_string());
-        let id = match &json["id"] {
-            Json::Null => &id,
-            value => value,
-        };
-        Ok(Self {
-            id: WorkflowId::try_from(id)?,
-            name: WorkflowName::try_from(&json["name"])?,
-            project_id: ProjectId::try_from(&json["project_id"])?,
-            description: WorkflowDescription::try_from(&json["description"])?,
-            paused: WorkflowPaused::try_from(&json["paused"])?,
         })
     }
 }

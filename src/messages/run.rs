@@ -1,7 +1,3 @@
-use anyhow::anyhow;
-use anyhow::Context;
-use serde_json::Value as Json;
-
 #[derive(
     Debug,
     Copy,
@@ -41,26 +37,6 @@ impl AsRef<str> for RunPriority {
 impl Default for RunPriority {
     fn default() -> Self {
         Self::Normal
-    }
-}
-
-impl TryFrom<&Json> for RunPriority {
-    type Error = anyhow::Error;
-
-    fn try_from(value: &Json) -> std::result::Result<Self, <RunPriority as TryFrom<&Json>>::Error> {
-        let value = value.as_str().ok_or(anyhow!("invalid json value"))?;
-        Ok(<RunPriority as std::str::FromStr>::from_str(value)
-            .context("failed to parse run priority")?)
-    }
-}
-
-impl TryFrom<Json> for RunPriority {
-    type Error = anyhow::Error;
-
-    fn try_from(value: Json) -> std::result::Result<Self, <RunPriority as TryFrom<Json>>::Error> {
-        let value = value.as_str().ok_or(anyhow!("invalid json value"))?;
-        Ok(<RunPriority as std::str::FromStr>::from_str(value)
-            .context("failed to parse run priority")?)
     }
 }
 

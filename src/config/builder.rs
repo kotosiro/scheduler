@@ -5,13 +5,13 @@ use config::File;
 use config::FileFormat;
 use std::path::Path;
 
-pub fn new(path: Option<&Path>) -> ConfigBuilder<DefaultState> {
+pub fn new<'a>(path: impl Into<Option<&'a Path>>) -> ConfigBuilder<DefaultState> {
     let mut builder = config::Config::builder();
     builder = builder.add_source(File::from_str(
         include_str!("defaults.toml"),
         FileFormat::Toml,
     ));
-    if let Some(path) = path {
+    if let Some(path) = path.into() {
         builder = builder.add_source(File::from(path));
     }
     builder.add_source(
@@ -54,7 +54,7 @@ mod tests {
         );
         let path = testutils::io::persist(&config, Path::new("./config.toml"))
             .expect("path should be created");
-        let config: crate::config::Config = new(Some(&path))
+        let config: crate::config::Config = new(path)
             .build()
             .expect("builder should be able to build configuration")
             .try_deserialize()

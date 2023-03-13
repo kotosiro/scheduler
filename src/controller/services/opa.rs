@@ -133,7 +133,7 @@ impl Event {
         self
     }
 
-    async fn is_authorized_by(&self, url: &Option<String>) -> Result<bool> {
+    async fn is_authorized_by(&self, url: Option<&String>) -> Result<bool> {
         let decision = opa::authorize(
             url,
             &Query {
@@ -156,7 +156,7 @@ impl Event {
 
 #[async_trait]
 pub trait OPAService {
-    async fn authorize(&self, no_auth: &bool, url: &Option<String>, mut event: Event)
+    async fn authorize(&self, no_auth: &bool, url: Option<&String>, mut event: Event)
         -> Result<()>;
 }
 
@@ -165,7 +165,7 @@ impl OPAService for PgPool {
     async fn authorize(
         &self,
         no_auth: &bool,
-        url: &Option<String>,
+        url: Option<&String>,
         mut event: Event,
     ) -> Result<()> {
         if *no_auth {

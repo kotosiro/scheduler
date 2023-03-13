@@ -38,23 +38,33 @@ pub struct ListWorkflowsByIdQuery {
     limit: Option<i64>,
 }
 
+#[derive(serde::Deserialize)]
+pub struct CreateJson {
+    id: Option<String>,
+    name: String,
+    description: String,
+    config: Option<Value>,
+}
+
 pub async fn create(
     token: Token,
     Extension(state): Extension<SharedState>,
-    Json(payload): Json<Value>,
+    Json(payload): Json<CreateJson>,
 ) -> Result<Response, InteractorError> {
-    let project = if let Ok(project) = Project::try_from(payload) {
-        project
-    } else {
-        error!("invalid project specification found");
-        return Err(InteractorError::ValidationFailed);
-    };
+    let id = payload.id.unwrap_or(uuid::Uuid::new_v4().to_string());
+    let project =
+        if let Ok(project) = Project::new(id, payload.name, payload.description, payload.config) {
+            project
+        } else {
+            error!("invalid project specification found");
+            return Err(InteractorError::ValidationFailed);
+        };
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
         &state.controller.config.no_auth,
-        &state.controller.config.opa_addr,
+        state.controller.config.opa_addr.as_ref(),
         Event::update()
-            .on_project(Some(project.id().to_uuid()))
+            .on_project(project.id().to_uuid())
             .with_token(token),
     )
     .await
@@ -112,8 +122,8 @@ pub async fn get_by_name(
                 if let Err(_) = OPAService::authorize(
                     &state.controller.db_pool,
                     &state.controller.config.no_auth,
-                    &state.controller.config.opa_addr,
-                    Event::get().on_project(Some(row.id)).with_token(token),
+                    state.controller.config.opa_addr.as_ref(),
+                    Event::get().on_project(row.id).with_token(token),
                 )
                 .await
                 {
@@ -135,7 +145,7 @@ pub async fn get_by_name(
         if let Err(_) = OPAService::authorize(
             &state.controller.db_pool,
             &state.controller.config.no_auth,
-            &state.controller.config.opa_addr,
+            state.controller.config.opa_addr.as_ref(),
             Event::list().with_token(token),
         )
         .await
@@ -179,8 +189,8 @@ pub async fn get_summary_by_id(
             if let Err(_) = OPAService::authorize(
                 &state.controller.db_pool,
                 &state.controller.config.no_auth,
-                &state.controller.config.opa_addr,
-                Event::get().on_project(Some(row.id)).with_token(token),
+                state.controller.config.opa_addr.as_ref(),
+                Event::get().on_project(row.id).with_token(token),
             )
             .await
             {
@@ -217,10 +227,8 @@ pub async fn delete(
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
         &state.controller.config.no_auth,
-        &state.controller.config.opa_addr,
-        Event::delete()
-            .on_project(Some(id.to_uuid()))
-            .with_token(token),
+        state.controller.config.opa_addr.as_ref(),
+        Event::delete().on_project(id.to_uuid()).with_token(token),
     )
     .await
     {
@@ -274,10 +282,8 @@ pub async fn list_workflows_by_id(
     if let Err(_) = OPAService::authorize(
         &state.controller.db_pool,
         &state.controller.config.no_auth,
-        &state.controller.config.opa_addr,
-        Event::list()
-            .on_project(Some(id.to_uuid()))
-            .with_token(token),
+        state.controller.config.opa_addr.as_ref(),
+        Event::list().on_project(id.to_uuid()).with_token(token),
     )
     .await
     {

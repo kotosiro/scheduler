@@ -4,7 +4,6 @@ use crate::impl_uuid_property;
 use anyhow::Result;
 use getset::Getters;
 use getset::Setters;
-use serde_json::json;
 use serde_json::Value as Json;
 use uuid::Uuid;
 use validator::Validate;
@@ -56,35 +55,13 @@ impl Project {
         id: String,
         name: String,
         description: String,
-        config: Option<Json>,
+        config: impl Into<Option<Json>>,
     ) -> Result<Self> {
         Ok(Self {
             id: ProjectId::try_from(id)?,
             name: ProjectName::new(name)?,
             description: ProjectDescription::new(description)?,
-            config: config.map(|json| ProjectConfig::new(json)),
-        })
-    }
-}
-
-impl TryFrom<Json> for Project {
-    type Error = anyhow::Error;
-
-    fn try_from(json: Json) -> std::result::Result<Self, Self::Error> {
-        let id = json!(Uuid::new_v4().to_string());
-        let id = match &json["id"] {
-            Json::Null => &id,
-            value => value,
-        };
-        let config = match &json["config"] {
-            Json::Null => None,
-            value => Some(value),
-        };
-        Ok(Self {
-            id: ProjectId::try_from(id)?,
-            name: ProjectName::try_from(&json["name"])?,
-            description: ProjectDescription::try_from(&json["description"])?,
-            config: config.map(|json| ProjectConfig::new(json.clone())),
+            config: config.into().map(|json| ProjectConfig::new(json)),
         })
     }
 }
@@ -129,39 +106,5 @@ mod tests {
             Ok(_)
         ));
         assert!(matches!(ProjectDescription::new(""), Ok(_)));
-    }
-
-    #[test]
-    fn test_valid_project_config() {
-        let json = format!(
-            r#"
-                {{
-                    "{}": "{}",
-                    "{}": {}
-                }}
-            "#,
-            testutils::rand::string(10),
-            testutils::rand::string(10),
-            testutils::rand::string(10),
-            testutils::rand::i64(-10, 10)
-        );
-        assert!(matches!(ProjectConfig::try_from(json), Ok(_)));
-    }
-
-    #[test]
-    fn test_invalid_project_config() {
-        let json = format!(
-            r#"
-                {{
-                    "{}": "{}",
-                    "{}": {}
-                }}}}
-            "#,
-            testutils::rand::string(10),
-            testutils::rand::string(10),
-            testutils::rand::string(10),
-            testutils::rand::i64(-10, 10)
-        );
-        assert!(matches!(ProjectConfig::try_from(json), Err(_)));
     }
 }
